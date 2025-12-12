@@ -1,0 +1,16 @@
+# Example control config (optional)
+# You can wire this into the scripts if you prefer config-driven experiments.
+sarm:
+  model_name: "Schrieffer/Llama-SARM-4B"
+  dtype: "bfloat16"
+controls:
+  clamp:
+    # clamp feature 12345 into [0, 2]
+    "12345": {min: 0.0, max: 2.0}
+  penalties:
+    - idx: 12345
+      tau: 3.0
+      alpha: 0.2
+  discriminator:
+    beta: 0.05
+    latent_indices: [12345, 999, 4242]
