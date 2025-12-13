@@ -1,0 +1,13 @@
+{
+  "penalize_features": [
+    30565,
+    35797,
+    13030
+  ],
+  "encourage_features": [
+    4231,
+    37776,
+    20191
+  ],
+  "strategy": "penalize_bad_math_features_encourage_good"
+}

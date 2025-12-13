@@ -1,0 +1,19 @@
+{
+  "task": "RewardBench-2 Math",
+  "num_samples": 30,
+  "results": {
+    "base_model": {
+      "description": "Llama-3.1-8B-Instruct without any training",
+      "avg_sarm_score": -0.082171630859375
+    },
+    "ppo_with_lora": {
+      "description": "PPO-trained with LoRA (30 steps)",
+      "avg_sarm_score": -0.077716064453125
+    }
+  },
+  "comparison": {
+    "lora_vs_base": 0.00445556640625,
+    "lora_vs_base_percent": 5.422268439426577
+  },
+  "conclusion": "LoRA training with PPO improves SARM score"
+}

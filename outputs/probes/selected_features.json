@@ -1,0 +1,18 @@
+{
+  "verbosity_features": [
+    29733,
+    53553,
+    3402,
+    6326,
+    19183,
+    36644,
+    21280
+  ],
+  "safety_harming": [
+    29733,
+    53553,
+    3402
+  ],
+  "safety_promoting": [],
+  "method": "verbosity_clamping"
+}

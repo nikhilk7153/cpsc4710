@@ -1,0 +1,28 @@
+# Environment files with secrets
+.env
+*.env
+
+# LaTeX files (generated)
+*.tex
+
+# Large model files
+*.safetensors
+*.pt
+*.bin
+*.ckpt
+value_head.pt
+human_latents.pt
+
+# Model outputs
+outputs/ppo_run*/
+outputs/ppo/
+outputs/experiments/*/model*
+outputs/experiments/*/value_head.pt
+
+# Python cache
+__pycache__/
+*.pyc
+.cache/
+
+# Jupyter
+.ipynb_checkpoints/

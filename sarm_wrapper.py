@@ -1,4 +1,3 @@
-\
 """
 sarm_wrapper.py
 
@@ -83,12 +82,23 @@ class SARMRewardModel:
             # Common Llama tokenizer setup
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        self.model = AutoModelForSequenceClassification.from_pretrained(
-            model_name,
-            device_map=self.device,            # keep on one device for reliable manual submodule calls
-            trust_remote_code=trust_remote_code,
-            torch_dtype=torch_dtype,
-        )
+        # Try to use flash_attention_2 if available, fall back to eager
+        try:
+            self.model = AutoModelForSequenceClassification.from_pretrained(
+                model_name,
+                device_map=self.device,
+                trust_remote_code=trust_remote_code,
+                torch_dtype=torch_dtype,
+                attn_implementation="flash_attention_2",
+            )
+        except ImportError:
+            self.model = AutoModelForSequenceClassification.from_pretrained(
+                model_name,
+                device_map=self.device,
+                trust_remote_code=trust_remote_code,
+                torch_dtype=torch_dtype,
+                attn_implementation="eager",
+            )
         self.model.eval()
 
         # Patch missing config.pad_token_id (seen in some repos)

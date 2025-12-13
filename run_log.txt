@@ -1,0 +1,725 @@
+==============================================
+Setting up SARM Feature Control Environment
+==============================================
+
+[1/4] Installing Python dependencies...
+Dependencies installed
+
+[2/4] Logging into HuggingFace...
+Token has not been saved to git credential helper.
+Note: Environment variable`HF_TOKEN` is set and is the current active token independently from the token you've just configured.
+Cannot authenticate through git-credential as no helper is defined on your machine.
+You might have to re-authenticate when pushing to the Hugging Face Hub.
+Run the following command in your terminal in case you want to set the 'store' credential helper as default.
+
+git config --global credential.helper store
+
+Read https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage for more details.
+Logged in successfully!
+
+[3/5] Skipping Flash Attention (using eager attention instead)...
+  Note: You can install flash-attn later for 2-3x speedup
+
+[4/5] Downloading models (this may take several minutes)...
+`torch_dtype` is deprecated! Use `dtype` instead!
+Downloading Schrieffer/Llama-SARM-4B...
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 192.32it/s]
+  SARM: 4.55B parameters
+Downloading meta-llama/Llama-3.1-8B-Instruct...
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 216.76it/s]
+  Llama-3.1-8B: 8.03B parameters
+Models downloaded successfully!
+
+[5/5] Creating output directories...
+
+==============================================
+Setup complete!
+==============================================
+
+Next steps:
+  1. Prepare data:  python scripts/prepare_data.py
+  2. Run Phase 2:   bash scripts/run_phase2_probes.sh
+  3. Run Phase 3:   bash scripts/run_phase3_ppo.sh
+  4. Evaluate:      bash scripts/run_evaluation.sh
+
+Or run everything: bash scripts/run_all.sh
+==============================================
+Phase 2: Causal Feature Identification
+==============================================
+
+[Step 1/4] Locating safety-related features...
+Using RewardBench-2 safety data from sarm/steering/
+Formula: score_i = (chosen_activation_i - rejected_activation_i) / (sum + C)
+
+`torch_dtype` is deprecated! Use `dtype` instead!
+Traceback (most recent call last):
+  File "/home/ubuntu/cpsc4710/sarm/src/1_steering_locate_features.py", line 172, in <module>
+    main()
+    ~~~~^^
+  File "/home/ubuntu/cpsc4710/sarm/src/1_steering_locate_features.py", line 77, in main
+    model = AutoModelForSequenceClassification.from_pretrained(
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        args.model_path,
+        ^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        attn_implementation="flash_attention_2",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ).to(args.device).eval()
+    ^
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/transformers/models/auto/auto_factory.py", line 597, in from_pretrained
+    return model_class.from_pretrained(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        pretrained_model_name_or_path, *model_args, config=config, **hub_kwargs, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 277, in _wrapper
+    return func(*args, **kwargs)
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 4971, in from_pretrained
+    model = cls(config, *model_args, **model_kwargs)
+  File "/home/ubuntu/.cache/huggingface/modules/transformers_modules/Schrieffer/Llama_hyphen_SARM_hyphen_4B/56cebd7fd6b3799bac591166e0a30e7aff6df357/modeling_sarm_llama.py", line 409, in __init__
+    super().__init__(config)
+    ~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 2076, in __init__
+    self.config._attn_implementation_internal = self._check_and_adjust_attn_implementation(
+                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.config._attn_implementation, is_init_check=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 2686, in _check_and_adjust_attn_implementation
+    applicable_attn_implementation = self.get_correct_attn_implementation(
+        applicable_attn_implementation, is_init_check
+    )
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 2714, in get_correct_attn_implementation
+    self._flash_attn_2_can_dispatch(is_init_check)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 2422, in _flash_attn_2_can_dispatch
+    raise ImportError(f"{preface} the package flash_attn seems to be not installed. {install_message}")
+ImportError: FlashAttention2 has been toggled on, but it cannot be used due to the following error: the package flash_attn seems to be not installed. Please refer to the documentation of https://huggingface.co/docs/transformers/perf_infer_gpu_one#flashattention-2 to install Flash Attention 2.
+Collecting flash-attn
+  Using cached flash_attn-2.8.3.tar.gz (8.4 MB)
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: torch in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from flash-attn) (2.9.1)
+Collecting einops (from flash-attn)
+  Using cached einops-0.8.1-py3-none-any.whl.metadata (13 kB)
+Requirement already satisfied: filelock in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (3.20.0)
+Requirement already satisfied: typing-extensions>=4.10.0 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (4.15.0)
+Requirement already satisfied: sympy>=1.13.3 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (1.14.0)
+Requirement already satisfied: networkx>=2.5.1 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (3.4.2)
+Requirement already satisfied: jinja2 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (3.1.6)
+Requirement already satisfied: fsspec>=0.8.5 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (2025.10.0)
+Requirement already satisfied: nvidia-cuda-nvrtc-cu12==12.8.93 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.93)
+Requirement already satisfied: nvidia-cuda-runtime-cu12==12.8.90 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.90)
+Requirement already satisfied: nvidia-cuda-cupti-cu12==12.8.90 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.90)
+Requirement already satisfied: nvidia-cudnn-cu12==9.10.2.21 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (9.10.2.21)
+Requirement already satisfied: nvidia-cublas-cu12==12.8.4.1 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.4.1)
+Requirement already satisfied: nvidia-cufft-cu12==11.3.3.83 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (11.3.3.83)
+Requirement already satisfied: nvidia-curand-cu12==10.3.9.90 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (10.3.9.90)
+Requirement already satisfied: nvidia-cusolver-cu12==11.7.3.90 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (11.7.3.90)
+Requirement already satisfied: nvidia-cusparse-cu12==12.5.8.93 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.5.8.93)
+Requirement already satisfied: nvidia-cusparselt-cu12==0.7.1 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (0.7.1)
+Requirement already satisfied: nvidia-nccl-cu12==2.27.5 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (2.27.5)
+Requirement already satisfied: nvidia-nvshmem-cu12==3.3.20 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (3.3.20)
+Requirement already satisfied: nvidia-nvtx-cu12==12.8.90 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.90)
+Requirement already satisfied: nvidia-nvjitlink-cu12==12.8.93 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.93)
+Requirement already satisfied: nvidia-cufile-cu12==1.13.1.3 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (1.13.1.3)
+Requirement already satisfied: triton==3.5.1 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (3.5.1)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from sympy>=1.13.3->torch->flash-attn) (1.3.0)
+Requirement already satisfied: MarkupSafe>=2.0 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from jinja2->torch->flash-attn) (3.0.3)
+Using cached einops-0.8.1-py3-none-any.whl (64 kB)
+Building wheels for collected packages: flash-attn
+  Building wheel for flash-attn (pyproject.toml): started
+==============================================
+Phase 2: Causal Feature Identification
+==============================================
+
+[Step 1/4] Locating safety-related features...
+Using RewardBench-2 safety data from sarm/steering/
+Formula: score_i = (chosen_activation_i - rejected_activation_i) / (sum + C)
+
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 202.48it/s]
+Scoring: 0it [00:00, ?it/s]/home/ubuntu/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py:1786: FutureWarning: `past_key_value` is deprecated and will be removed in version 4.58 for `LlamaDecoderLayer.forward`. Use `past_key_values` instead.
+  return forward_call(*args, **kwargs)
+Scoring: 0it [00:00, ?it/s]
+Forward hook removed.
+Traceback (most recent call last):
+  File "/home/ubuntu/cpsc4710/sarm/src/1_steering_locate_features.py", line 172, in <module>
+    main()
+    ~~~~^^
+  File "/home/ubuntu/cpsc4710/sarm/src/1_steering_locate_features.py", line 127, in main
+    model(**enc_c)
+    ~~~~~^^^^^^^^^
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/ubuntu/.cache/huggingface/modules/transformers_modules/Schrieffer/Llama_hyphen_SARM_hyphen_4B/56cebd7fd6b3799bac591166e0a30e7aff6df357/modeling_sarm_llama.py", line 455, in forward
+    transformer_outputs = self.model(
+        input_ids,
+    ...<7 lines>...
+        return_dict=return_dict,
+    )
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/ubuntu/.cache/huggingface/modules/transformers_modules/Schrieffer/Llama_hyphen_SARM_hyphen_4B/56cebd7fd6b3799bac591166e0a30e7aff6df357/modeling_sarm_llama.py", line 239, in forward
+    layer_outputs = decoder_layer(
+        hidden_states,
+    ...<6 lines>...
+        position_embeddings=position_embeddings,
+    )
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/transformers/modeling_layers.py", line 94, in __call__
+    return super().__call__(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/transformers/utils/deprecation.py", line 172, in wrapped_func
+    return func(*args, **kwargs)
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/transformers/models/llama/modeling_llama.py", line 294, in forward
+    hidden_states, _ = self.self_attn(
+                       ~~~~~~~~~~~~~~^
+        hidden_states=hidden_states,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/transformers/utils/deprecation.py", line 172, in wrapped_func
+    return func(*args, **kwargs)
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/transformers/models/llama/modeling_llama.py", line 241, in forward
+    query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin)
+                               ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/lib/python3.13/site-packages/transformers/models/llama/modeling_llama.py", line 138, in apply_rotary_pos_emb
+    q_embed = (q * cos) + (rotate_half(q) * sin)
+               ~~^~~~~
+RuntimeError: The size of tensor a (32) must match the size of tensor b (128) at non-singleton dimension 3
+  Building wheel for flash-attn (pyproject.toml): still running...
+==============================================
+Evaluation: Steering Effectiveness
+==============================================
+
+[Step 1/4] Creating steering configuration...
+
+Steering config: suppress features [48659, 28879, 26446, 46231, 25241]
+Saved to outputs/eval/steering_config.json
+
+[Step 2/4] Testing steering on RewardBench-2 safety data...
+
+Testing on safety_c (chosen/safe responses)...
+Using pip 25.3 from /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/pip (python 3.10)
+Collecting flash-attn
+  Using cached flash_attn-2.8.3.tar.gz (8.4 MB)
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 187.35it/s]
+  Preparing metadata (pyproject.toml): started
+  Running command Preparing metadata (pyproject.toml)
+Scoring:   0%|          | 0/400 [00:00<?, ?it/s]Scoring:   0%|          | 1/400 [00:00<03:32,  1.88it/s]Scoring:   1%|          | 4/400 [00:00<00:54,  7.32it/s]  /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/setuptools/dist.py:759: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+  !!
+
+          ********************************************************************************
+          Please consider removing the following classifiers in favor of a SPDX license expression:
+
+          License :: OSI Approved :: BSD License
+
+          See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+          ********************************************************************************
+
+  !!
+    self._finalize_license_expression()
+
+
+  torch.__version__  = 2.9.1+cu128
+
+
+  running dist_info
+  creating /tmp/pip-modern-metadata-a0eccctp/flash_attn.egg-info
+  writing /tmp/pip-modern-metadata-a0eccctp/flash_attn.egg-info/PKG-INFO
+  writing dependency_links to /tmp/pip-modern-metadata-a0eccctp/flash_attn.egg-info/dependency_links.txt
+  writing requirements to /tmp/pip-modern-metadata-a0eccctp/flash_attn.egg-info/requires.txt
+  writing top-level names to /tmp/pip-modern-metadata-a0eccctp/flash_attn.egg-info/top_level.txt
+  writing manifest file '/tmp/pip-modern-metadata-a0eccctp/flash_attn.egg-info/SOURCES.txt'
+  W1212 19:35:48.772000 29495 site-packages/torch/utils/cpp_extension.py:630] Attempted to use ninja as the BuildExtension backend but we could not find ninja.. Falling back to using the slow distutils backend.
+  reading manifest file '/tmp/pip-modern-metadata-a0eccctp/flash_attn.egg-info/SOURCES.txt'
+  reading manifest template 'MANIFEST.in'
+Scoring:   2%|▏         | 7/400 [00:00<00:33, 11.57it/s]Scoring:   2%|▎         | 10/400 [00:00<00:25, 15.28it/s]Scoring:   3%|▎         | 13/400 [00:01<00:21, 18.30it/s]Scoring:   4%|▍         | 17/400 [00:01<00:17, 21.96it/s]Scoring:   5%|▌         | 21/400 [00:01<00:15, 24.69it/s]  warning: no files found matching '*.cu' under directory 'flash_attn'
+  warning: no files found matching '*.h' under directory 'flash_attn'
+  warning: no files found matching '*.cuh' under directory 'flash_attn'
+  warning: no files found matching '*.cpp' under directory 'flash_attn'
+  warning: no files found matching '*.hpp' under directory 'flash_attn'
+  adding license file 'LICENSE'
+  adding license file 'AUTHORS'
+  writing manifest file '/tmp/pip-modern-metadata-a0eccctp/flash_attn.egg-info/SOURCES.txt'
+  creating '/tmp/pip-modern-metadata-a0eccctp/flash_attn-2.8.3.dist-info'
+Scoring:   6%|▌         | 24/400 [00:01<00:15, 24.65it/s]Scoring:   7%|▋         | 28/400 [00:01<00:14, 26.51it/s]  Preparing metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: torch in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from flash-attn) (2.9.1)
+Collecting einops (from flash-attn)
+  Obtaining dependency information for einops from https://files.pythonhosted.org/packages/87/62/9773de14fe6c45c23649e98b83231fffd7b9892b6cf863251dc2afa73643/einops-0.8.1-py3-none-any.whl.metadata
+  Using cached einops-0.8.1-py3-none-any.whl.metadata (13 kB)
+Requirement already satisfied: filelock in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (3.20.0)
+Requirement already satisfied: typing-extensions>=4.10.0 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (4.15.0)
+Requirement already satisfied: sympy>=1.13.3 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (1.14.0)
+Requirement already satisfied: networkx>=2.5.1 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (3.4.2)
+Requirement already satisfied: jinja2 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (3.1.6)
+Requirement already satisfied: fsspec>=0.8.5 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (2025.10.0)
+Requirement already satisfied: nvidia-cuda-nvrtc-cu12==12.8.93 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.93)
+Requirement already satisfied: nvidia-cuda-runtime-cu12==12.8.90 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.90)
+Requirement already satisfied: nvidia-cuda-cupti-cu12==12.8.90 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.90)
+Requirement already satisfied: nvidia-cudnn-cu12==9.10.2.21 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (9.10.2.21)
+Requirement already satisfied: nvidia-cublas-cu12==12.8.4.1 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.4.1)
+Requirement already satisfied: nvidia-cufft-cu12==11.3.3.83 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (11.3.3.83)
+Requirement already satisfied: nvidia-curand-cu12==10.3.9.90 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (10.3.9.90)
+Requirement already satisfied: nvidia-cusolver-cu12==11.7.3.90 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (11.7.3.90)
+Requirement already satisfied: nvidia-cusparse-cu12==12.5.8.93 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.5.8.93)
+Requirement already satisfied: nvidia-cusparselt-cu12==0.7.1 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (0.7.1)
+Requirement already satisfied: nvidia-nccl-cu12==2.27.5 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (2.27.5)
+Requirement already satisfied: nvidia-nvshmem-cu12==3.3.20 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (3.3.20)
+Requirement already satisfied: nvidia-nvtx-cu12==12.8.90 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.90)
+Requirement already satisfied: nvidia-nvjitlink-cu12==12.8.93 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.93)
+Requirement already satisfied: nvidia-cufile-cu12==1.13.1.3 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (1.13.1.3)
+Requirement already satisfied: triton==3.5.1 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (3.5.1)
+Scoring:   8%|▊         | 32/400 [00:01<00:13, 27.17it/s]Requirement already satisfied: mpmath<1.4,>=1.1.0 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from sympy>=1.13.3->torch->flash-attn) (1.3.0)
+Requirement already satisfied: MarkupSafe>=2.0 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from jinja2->torch->flash-attn) (3.0.3)
+Using cached einops-0.8.1-py3-none-any.whl (64 kB)
+Building wheels for collected packages: flash-attn
+  Building wheel for flash-attn (pyproject.toml): started
+  Running command Building wheel for flash-attn (pyproject.toml)
+Scoring:   9%|▉         | 36/400 [00:01<00:12, 29.14it/s]Scoring:  10%|█         | 40/400 [00:01<00:11, 30.32it/s]Scoring:  11%|█         | 44/400 [00:02<00:11, 29.83it/s]Scoring:  12%|█▏        | 48/400 [00:02<00:12, 29.12it/s]Scoring:  13%|█▎        | 52/400 [00:02<00:11, 30.69it/s]Scoring:  14%|█▍        | 56/400 [00:02<00:12, 28.18it/s]Scoring:  15%|█▍        | 59/400 [00:02<00:13, 25.88it/s]Scoring:  16%|█▌        | 63/400 [00:02<00:12, 27.43it/s]Scoring:  17%|█▋        | 67/400 [00:02<00:11, 28.69it/s]Scoring:  18%|█▊        | 71/400 [00:02<00:10, 31.38it/s]  /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/setuptools/dist.py:759: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+  !!
+
+          ********************************************************************************
+          Please consider removing the following classifiers in favor of a SPDX license expression:
+
+          License :: OSI Approved :: BSD License
+
+          See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+          ********************************************************************************
+
+  !!
+    self._finalize_license_expression()
+
+
+  torch.__version__  = 2.9.1+cu128
+
+
+  running bdist_wheel
+Scoring:  19%|█▉        | 75/400 [00:03<00:10, 31.80it/s]Scoring:  20%|█▉        | 79/400 [00:03<00:10, 30.14it/s]  W1212 19:35:51.320000 29676 site-packages/torch/utils/cpp_extension.py:630] Attempted to use ninja as the BuildExtension backend but we could not find ninja.. Falling back to using the slow distutils backend.
+  Guessing wheel URL:  https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp310-cp310-linux_x86_64.whl
+  Precompiled wheel not found. Building from source...
+  running build
+  running build_py
+  creating build/lib.linux-x86_64-cpython-310/flash_attn
+  copying flash_attn/flash_blocksparse_attn_interface.py -> build/lib.linux-x86_64-cpython-310/flash_attn
+  copying flash_attn/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn
+  copying flash_attn/flash_blocksparse_attention.py -> build/lib.linux-x86_64-cpython-310/flash_attn
+  copying flash_attn/flash_attn_triton_og.py -> build/lib.linux-x86_64-cpython-310/flash_attn
+  copying flash_attn/flash_attn_triton.py -> build/lib.linux-x86_64-cpython-310/flash_attn
+  copying flash_attn/flash_attn_interface.py -> build/lib.linux-x86_64-cpython-310/flash_attn
+  copying flash_attn/bert_padding.py -> build/lib.linux-x86_64-cpython-310/flash_attn
+  creating build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/benchmark_flash_attention_fp8.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/test_flash_attn.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/benchmark_attn.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/benchmark_mla_decode.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/test_kvcache.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/__init__.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/setup.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/padding.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/test_attn_kvcache.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/test_util.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/benchmark_split_kv.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/generate_kernels.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/flash_attn_interface.py -> build/lib.linux-x86_64-cpython-310/hopper
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/layers
+  copying flash_attn/layers/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/layers
+  copying flash_attn/layers/rotary.py -> build/lib.linux-x86_64-cpython-310/flash_attn/layers
+  copying flash_attn/layers/patch_embed.py -> build/lib.linux-x86_64-cpython-310/flash_attn/layers
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/distributed.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/pretrained.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/torch.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/library.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/benchmark.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/generation.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/testing.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/blackwell_helpers.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/fast_math.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/block_info.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/tile_scheduler.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/seqlen_info.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/interface.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/mask.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/flash_bwd_postprocess.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/flash_bwd_preprocess.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/mma_sm100_desc.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/flash_fwd.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/flash_fwd_sm100.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/pack_gqa.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/utils.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/hopper_helpers.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/pipeline.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/softmax.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/flash_bwd.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/ampere_helpers.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/named_barrier.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/ops
+  copying flash_attn/ops/activations.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops
+  copying flash_attn/ops/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops
+  copying flash_attn/ops/fused_dense.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops
+  copying flash_attn/ops/layer_norm.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops
+  copying flash_attn/ops/rms_norm.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/bwd_prefill_fused.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/fp8.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/bwd_ref.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/bwd_prefill.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/test.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/interface_fa.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/fwd_prefill.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/bwd_prefill_split.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/bench.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/train.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/fwd_ref.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/utils.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/fwd_decode.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/bwd_prefill_onekernel.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/gpt.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/opt.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/gpt_neox.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/falcon.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/vit.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/btlm.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/baichuan.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/gptj.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/llama.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/bigcode.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/bert.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/losses
+  copying flash_attn/losses/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/losses
+  copying flash_attn/losses/cross_entropy.py -> build/lib.linux-x86_64-cpython-310/flash_attn/losses
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/modules
+  copying flash_attn/modules/mlp.py -> build/lib.linux-x86_64-cpython-310/flash_attn/modules
+  copying flash_attn/modules/embedding.py -> build/lib.linux-x86_64-cpython-310/flash_attn/modules
+  copying flash_attn/modules/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/modules
+  copying flash_attn/modules/mha.py -> build/lib.linux-x86_64-cpython-310/flash_attn/modules
+  copying flash_attn/modules/block.py -> build/lib.linux-x86_64-cpython-310/flash_attn/modules
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  copying flash_attn/ops/triton/mlp.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  copying flash_attn/ops/triton/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  copying flash_attn/ops/triton/k_activations.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  copying flash_attn/ops/triton/cross_entropy.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  copying flash_attn/ops/triton/layer_norm.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  copying flash_attn/ops/triton/rotary.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  copying flash_attn/ops/triton/linear.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  running build_ext
+  W1212 19:35:51.343000 29676 site-packages/torch/utils/cpp_extension.py:531] There are no g++ version bounds defined for CUDA version 12.8
+  building 'flash_attn_2_cuda' extension
+  creating build/temp.linux-x86_64-cpython-310/csrc/flash_attn
+  creating build/temp.linux-x86_64-cpython-310/csrc/flash_attn/src
+  g++ -pthread -B /home/ubuntu/miniconda3/envs/sarm/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -fwrapv -O2 -Wall -fPIC -O2 -isystem /home/ubuntu/miniconda3/envs/sarm/include -fPIC -O2 -isystem /home/ubuntu/miniconda3/envs/sarm/include -fPIC -I/tmp/pip-install-fl809n4f/flash-attn_3f5f4e9cedad4f24b9f3c0689fd03ed0/csrc/flash_attn -I/tmp/pip-install-fl809n4f/flash-attn_3f5f4e9cedad4f24b9f3c0689fd03ed0/csrc/flash_attn/src -I/tmp/pip-install-fl809n4f/flash-attn_3f5f4e9cedad4f24b9f3c0689fd03ed0/csrc/cutlass/include -I/home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/torch/include -I/home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -I/home/ubuntu/miniconda3/envs/sarm/include/python3.10 -c csrc/flash_attn/flash_api.cpp -o build/temp.linux-x86_64-cpython-310/csrc/flash_attn/flash_api.o -O3 -std=c++17 -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=flash_attn_2_cuda
+Scoring:  21%|██        | 83/400 [00:03<00:10, 30.66it/s]Scoring:  22%|██▏       | 87/400 [00:03<00:09, 31.64it/s]Scoring:  23%|██▎       | 91/400 [00:03<00:09, 31.06it/s]Scoring:  24%|██▍       | 95/400 [00:03<00:09, 31.35it/s]Scoring:  25%|██▍       | 99/400 [00:03<00:09, 32.25it/s]Scoring:  26%|██▌       | 103/400 [00:03<00:09, 31.94it/s]Scoring:  27%|██▋       | 107/400 [00:04<00:09, 31.79it/s]Scoring:  28%|██▊       | 111/400 [00:04<00:09, 29.94it/s]Scoring:  29%|██▉       | 115/400 [00:04<00:09, 30.14it/s]Scoring:  30%|██▉       | 119/400 [00:04<00:08, 32.28it/s]Scoring:  31%|███       | 123/400 [00:04<00:08, 33.26it/s]Scoring:  32%|███▏      | 127/400 [00:04<00:07, 34.85it/s]Scoring:  33%|███▎      | 131/400 [00:04<00:08, 33.28it/s]Scoring:  34%|███▍      | 135/400 [00:04<00:07, 34.26it/s]Scoring:  35%|███▍      | 139/400 [00:05<00:07, 34.81it/s]Scoring:  36%|███▌      | 143/400 [00:05<00:07, 33.82it/s]Scoring:  37%|███▋      | 147/400 [00:05<00:07, 35.18it/s]Scoring:  38%|███▊      | 152/400 [00:05<00:07, 35.11it/s]Scoring:  39%|███▉      | 156/400 [00:05<00:07, 33.11it/s]Scoring:  40%|████      | 160/400 [00:05<00:07, 34.08it/s]Scoring:  41%|████      | 164/400 [00:05<00:07, 32.55it/s]Scoring:  42%|████▏     | 168/400 [00:05<00:06, 34.25it/s]Scoring:  43%|████▎     | 172/400 [00:06<00:06, 34.00it/s]Scoring:  44%|████▍     | 176/400 [00:06<00:06, 32.33it/s]Scoring:  45%|████▌     | 180/400 [00:06<00:06, 32.62it/s]Scoring:  46%|████▌     | 184/400 [00:06<00:06, 34.27it/s]Scoring:  47%|████▋     | 189/400 [00:06<00:05, 36.54it/s]Scoring:  48%|████▊     | 193/400 [00:06<00:05, 36.62it/s]Scoring:  49%|████▉     | 197/400 [00:06<00:05, 37.26it/s]Scoring:  50%|█████     | 201/400 [00:06<00:05, 36.87it/s]Scoring:  52%|█████▏    | 206/400 [00:06<00:05, 37.82it/s]Scoring:  52%|█████▎    | 210/400 [00:07<00:05, 37.33it/s]Scoring:  54%|█████▎    | 214/400 [00:07<00:05, 36.14it/s]Scoring:  55%|█████▍    | 218/400 [00:07<00:05, 34.51it/s]Scoring:  56%|█████▌    | 222/400 [00:07<00:04, 35.64it/s]Scoring:  56%|█████▋    | 226/400 [00:07<00:05, 34.20it/s]Scoring:  57%|█████▊    | 230/400 [00:07<00:05, 31.66it/s]Scoring:  58%|█████▊    | 234/400 [00:07<00:05, 32.06it/s]Scoring:  60%|█████▉    | 238/400 [00:07<00:04, 32.77it/s]Scoring:  60%|██████    | 242/400 [00:08<00:04, 32.84it/s]Scoring:  62%|██████▏   | 246/400 [00:08<00:04, 34.57it/s]Scoring:  62%|██████▎   | 250/400 [00:08<00:04, 34.61it/s]Scoring:  64%|██████▎   | 254/400 [00:08<00:04, 35.29it/s]Scoring:  64%|██████▍   | 258/400 [00:08<00:03, 35.71it/s]Scoring:  66%|██████▌   | 262/400 [00:08<00:03, 35.38it/s]Scoring:  66%|██████▋   | 266/400 [00:08<00:03, 33.97it/s]Scoring:  68%|██████▊   | 270/400 [00:08<00:03, 33.02it/s]Scoring:  69%|██████▉   | 275/400 [00:08<00:03, 35.63it/s]Scoring:  70%|██████▉   | 279/400 [00:09<00:03, 35.28it/s]Scoring:  71%|███████   | 283/400 [00:09<00:03, 33.79it/s]Scoring:  72%|███████▏  | 288/400 [00:09<00:03, 35.77it/s]Scoring:  73%|███████▎  | 292/400 [00:09<00:03, 35.00it/s]Scoring:  74%|███████▍  | 296/400 [00:09<00:03, 33.83it/s]Scoring:  75%|███████▌  | 300/400 [00:09<00:03, 33.32it/s]Scoring:  76%|███████▌  | 304/400 [00:09<00:02, 32.97it/s]Scoring:  77%|███████▋  | 308/400 [00:09<00:02, 32.68it/s]Scoring:  78%|███████▊  | 312/400 [00:10<00:02, 32.09it/s]Scoring:  79%|███████▉  | 316/400 [00:10<00:02, 32.18it/s]Scoring:  80%|████████  | 320/400 [00:10<00:02, 33.47it/s]Scoring:  81%|████████▏ | 325/400 [00:10<00:02, 35.98it/s]Scoring:  82%|████████▏ | 329/400 [00:10<00:02, 35.13it/s]Scoring:  83%|████████▎ | 333/400 [00:10<00:01, 35.83it/s]Scoring:  84%|████████▍ | 337/400 [00:10<00:01, 32.74it/s]Scoring:  85%|████████▌ | 341/400 [00:10<00:01, 34.25it/s]Scoring:  86%|████████▋ | 346/400 [00:11<00:01, 36.50it/s]Scoring:  88%|████████▊ | 351/400 [00:11<00:01, 38.63it/s]Scoring:  89%|████████▉ | 355/400 [00:11<00:01, 37.04it/s]Scoring:  90%|████████▉ | 359/400 [00:11<00:01, 36.20it/s]Scoring:  91%|█████████ | 363/400 [00:11<00:01, 36.56it/s]Scoring:  92%|█████████▏| 367/400 [00:11<00:00, 34.79it/s]Scoring:  93%|█████████▎| 372/400 [00:11<00:00, 37.34it/s]Scoring:  94%|█████████▍| 376/400 [00:11<00:00, 34.32it/s]Scoring:  95%|█████████▌| 380/400 [00:12<00:00, 35.21it/s]Scoring:  96%|█████████▌| 384/400 [00:12<00:00, 34.45it/s]Scoring:  97%|█████████▋| 388/400 [00:12<00:00, 35.90it/s]Scoring:  98%|█████████▊| 392/400 [00:12<00:00, 36.76it/s]Scoring:  99%|█████████▉| 396/400 [00:12<00:00, 36.58it/s]Scoring: 100%|██████████| 400/400 [00:12<00:00, 34.31it/s]Scoring: 100%|██████████| 400/400 [00:12<00:00, 31.77it/s]
+✓ results saved → outputs/eval/rb2_safety_chosen_results.json
+✓ plot saved    → outputs/eval/rb2_safety_chosen_dist.png
+Forward pre-hook removed.
+
+Testing on safety_j (rejected/unsafe responses)...
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 188.05it/s]
+  /usr/bin/nvcc -I/tmp/pip-install-fl809n4f/flash-attn_3f5f4e9cedad4f24b9f3c0689fd03ed0/csrc/flash_attn -I/tmp/pip-install-fl809n4f/flash-attn_3f5f4e9cedad4f24b9f3c0689fd03ed0/csrc/flash_attn/src -I/tmp/pip-install-fl809n4f/flash-attn_3f5f4e9cedad4f24b9f3c0689fd03ed0/csrc/cutlass/include -I/home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/torch/include -I/home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -I/home/ubuntu/miniconda3/envs/sarm/include/python3.10 -c csrc/flash_attn/src/flash_bwd_hdim128_bf16_causal_sm80.cu -o build/temp.linux-x86_64-cpython-310/csrc/flash_attn/src/flash_bwd_hdim128_bf16_causal_sm80.o -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options '-fPIC' -O3 -std=c++17 -U__CUDA_NO_HALF_OPERATORS__ -U__CUDA_NO_HALF_CONVERSIONS__ -U__CUDA_NO_HALF2_OPERATORS__ -U__CUDA_NO_BFLOAT16_CONVERSIONS__ --expt-relaxed-constexpr --expt-extended-lambda --use_fast_math -gencode arch=compute_80,code=sm_80 -gencode arch=compute_90,code=sm_90 -gencode arch=compute_100,code=sm_100 -gencode arch=compute_120,code=sm_120 --threads 4 -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=flash_attn_2_cuda
+Scoring:   0%|          | 0/400 [00:00<?, ?it/s]Scoring:   0%|          | 1/400 [00:00<03:34,  1.86it/s]Scoring:   1%|          | 4/400 [00:00<00:54,  7.28it/s]Scoring:   2%|▏         | 7/400 [00:00<00:33, 11.81it/s]Scoring:   2%|▎         | 10/400 [00:00<00:25, 15.50it/s]Scoring:   3%|▎         | 13/400 [00:01<00:20, 18.86it/s]Scoring:   4%|▍         | 16/400 [00:01<00:18, 20.24it/s]Scoring:   5%|▍         | 19/400 [00:01<00:17, 22.34it/s]Scoring:   6%|▌         | 22/400 [00:01<00:17, 21.98it/s]Scoring:   6%|▋         | 25/400 [00:01<00:17, 21.56it/s]Scoring:   7%|▋         | 29/400 [00:01<00:15, 23.96it/s]Scoring:   8%|▊         | 33/400 [00:01<00:14, 24.66it/s]Scoring:   9%|▉         | 36/400 [00:01<00:14, 25.78it/s]Scoring:  10%|▉         | 39/400 [00:02<00:13, 26.76it/s]Scoring:  11%|█         | 43/400 [00:02<00:12, 28.47it/s]Scoring:  12%|█▏        | 46/400 [00:02<00:12, 27.50it/s]Scoring:  12%|█▎        | 50/400 [00:02<00:11, 29.85it/s]Scoring:  14%|█▎        | 54/400 [00:02<00:11, 29.44it/s]Scoring:  14%|█▍        | 57/400 [00:02<00:13, 26.11it/s]Scoring:  15%|█▌        | 61/400 [00:02<00:12, 27.93it/s]Scoring:  16%|█▋        | 65/400 [00:02<00:11, 29.84it/s]Scoring:  17%|█▋        | 69/400 [00:03<00:11, 28.61it/s]Scoring:  18%|█▊        | 72/400 [00:03<00:11, 28.71it/s]Scoring:  19%|█▉        | 76/400 [00:03<00:10, 30.31it/s]Scoring:  20%|██        | 80/400 [00:03<00:10, 30.78it/s]Scoring:  21%|██        | 84/400 [00:03<00:09, 31.70it/s]Scoring:  22%|██▏       | 88/400 [00:03<00:09, 31.92it/s]Scoring:  23%|██▎       | 92/400 [00:03<00:09, 33.18it/s]Scoring:  24%|██▍       | 96/400 [00:03<00:09, 32.07it/s]Scoring:  25%|██▌       | 100/400 [00:04<00:09, 32.02it/s]Scoring:  26%|██▌       | 104/400 [00:04<00:09, 32.30it/s]Scoring:  27%|██▋       | 108/400 [00:04<00:08, 33.15it/s]Scoring:  28%|██▊       | 112/400 [00:04<00:08, 33.21it/s]Scoring:  29%|██▉       | 116/400 [00:04<00:08, 33.34it/s]Scoring:  30%|███       | 120/400 [00:04<00:08, 31.25it/s]Scoring:  31%|███       | 124/400 [00:04<00:08, 31.30it/s]Scoring:  32%|███▏      | 128/400 [00:04<00:09, 30.11it/s]Scoring:  33%|███▎      | 132/400 [00:05<00:08, 32.37it/s]Scoring:  34%|███▍      | 136/400 [00:05<00:08, 30.05it/s]Scoring:  35%|███▌      | 140/400 [00:05<00:08, 30.21it/s]Scoring:  36%|███▌      | 144/400 [00:05<00:08, 30.62it/s]Scoring:  37%|███▋      | 148/400 [00:05<00:07, 32.86it/s]Scoring:  38%|███▊      | 152/400 [00:05<00:07, 33.34it/s]Scoring:  39%|███▉      | 156/400 [00:05<00:06, 35.03it/s]Scoring:  40%|████      | 160/400 [00:05<00:07, 31.33it/s]Scoring:  41%|████      | 164/400 [00:06<00:07, 31.93it/s]Scoring:  42%|████▏     | 168/400 [00:06<00:07, 31.58it/s]Scoring:  43%|████▎     | 172/400 [00:06<00:08, 28.40it/s]Scoring:  44%|████▍     | 175/400 [00:06<00:07, 28.32it/s]Scoring:  45%|████▍     | 179/400 [00:06<00:07, 30.74it/s]Scoring:  46%|████▌     | 183/400 [00:06<00:06, 32.41it/s]Scoring:  47%|████▋     | 187/400 [00:06<00:06, 30.47it/s]Scoring:  48%|████▊     | 191/400 [00:06<00:06, 32.53it/s]Scoring:  49%|████▉     | 195/400 [00:07<00:06, 31.64it/s]Scoring:  50%|████▉     | 199/400 [00:07<00:06, 31.16it/s]Scoring:  51%|█████     | 203/400 [00:07<00:06, 31.09it/s]Scoring:  52%|█████▏    | 207/400 [00:07<00:06, 28.75it/s]Scoring:  52%|█████▎    | 210/400 [00:07<00:06, 27.29it/s]Scoring:  54%|█████▎    | 214/400 [00:07<00:06, 28.65it/s]Scoring:  55%|█████▍    | 218/400 [00:07<00:06, 29.64it/s]Scoring:  55%|█████▌    | 221/400 [00:07<00:06, 28.79it/s]Scoring:  56%|█████▌    | 224/400 [00:08<00:06, 27.49it/s]Scoring:  57%|█████▋    | 228/400 [00:08<00:06, 28.64it/s]Scoring:  58%|█████▊    | 232/400 [00:08<00:05, 29.79it/s]Scoring:  59%|█████▉    | 236/400 [00:08<00:05, 31.63it/s]Scoring:  60%|██████    | 240/400 [00:08<00:05, 31.52it/s]Scoring:  61%|██████    | 244/400 [00:08<00:05, 28.56it/s]Scoring:  62%|██████▏   | 248/400 [00:08<00:04, 31.22it/s]Scoring:  63%|██████▎   | 252/400 [00:08<00:04, 31.39it/s]Scoring:  64%|██████▍   | 256/400 [00:09<00:05, 27.85it/s]Scoring:  65%|██████▌   | 260/400 [00:09<00:04, 30.55it/s]Scoring:  66%|██████▌   | 264/400 [00:09<00:04, 30.40it/s]Scoring:  67%|██████▋   | 268/400 [00:09<00:04, 31.97it/s]Scoring:  68%|██████▊   | 272/400 [00:09<00:03, 32.46it/s]Scoring:  69%|██████▉   | 276/400 [00:09<00:03, 34.39it/s]Scoring:  70%|███████   | 280/400 [00:09<00:03, 35.33it/s]Scoring:  71%|███████   | 284/400 [00:09<00:03, 34.26it/s]Scoring:  72%|███████▏  | 288/400 [00:10<00:03, 35.51it/s]Scoring:  73%|███████▎  | 292/400 [00:10<00:03, 35.74it/s]Scoring:  74%|███████▍  | 296/400 [00:10<00:03, 34.30it/s]Scoring:  75%|███████▌  | 300/400 [00:10<00:02, 33.97it/s]Scoring:  76%|███████▌  | 304/400 [00:10<00:02, 34.48it/s]Scoring:  77%|███████▋  | 308/400 [00:10<00:02, 34.94it/s]Scoring:  78%|███████▊  | 313/400 [00:10<00:02, 36.97it/s]Scoring:  79%|███████▉  | 317/400 [00:10<00:02, 36.40it/s]Scoring:  80%|████████  | 321/400 [00:10<00:02, 36.98it/s]Scoring:  81%|████████▏ | 325/400 [00:11<00:02, 35.63it/s]Scoring:  82%|████████▏ | 329/400 [00:11<00:02, 35.45it/s]Scoring:  83%|████████▎ | 333/400 [00:11<00:01, 34.79it/s]Scoring:  84%|████████▍ | 337/400 [00:11<00:01, 35.13it/s]Scoring:  85%|████████▌ | 341/400 [00:11<00:01, 33.69it/s]Scoring:  86%|████████▋ | 345/400 [00:11<00:01, 30.77it/s]Scoring:  87%|████████▋ | 349/400 [00:11<00:01, 33.04it/s]Scoring:  88%|████████▊ | 354/400 [00:11<00:01, 35.22it/s]Scoring:  90%|████████▉ | 358/400 [00:12<00:01, 34.83it/s]Scoring:  90%|█████████ | 362/400 [00:12<00:01, 33.49it/s]Scoring:  92%|█████████▏| 366/400 [00:12<00:00, 34.93it/s]Scoring:  93%|█████████▎| 371/400 [00:12<00:00, 35.94it/s]Scoring:  94%|█████████▍| 375/400 [00:12<00:00, 34.94it/s]Scoring:  95%|█████████▍| 379/400 [00:12<00:00, 34.88it/s]Scoring:  96%|█████████▌| 384/400 [00:12<00:00, 36.60it/s]Scoring:  97%|█████████▋| 388/400 [00:12<00:00, 36.15it/s]Scoring:  98%|█████████▊| 392/400 [00:12<00:00, 37.09it/s]Scoring:  99%|█████████▉| 396/400 [00:13<00:00, 34.00it/s]Scoring: 100%|██████████| 400/400 [00:13<00:00, 29.95it/s]Scoring: 100%|██████████| 400/400 [00:13<00:00, 30.07it/s]
+✓ results saved → outputs/eval/rb2_safety_rejected_results.json
+✓ plot saved    → outputs/eval/rb2_safety_rejected_dist.png
+Forward pre-hook removed.
+
+[Step 3/4] Testing steering on RM-Bench safety data...
+
+Testing on RM-Bench safety_c...
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 187.68it/s]
+Scoring:   0%|          | 0/400 [00:00<?, ?it/s]Scoring:   0%|          | 1/400 [00:00<03:27,  1.92it/s]Scoring:   1%|          | 4/400 [00:00<00:52,  7.59it/s]Scoring:   2%|▏         | 7/400 [00:00<00:31, 12.52it/s]Scoring:   2%|▎         | 10/400 [00:00<00:24, 15.65it/s]Scoring:   3%|▎         | 13/400 [00:01<00:21, 18.10it/s]Scoring:   4%|▍         | 17/400 [00:01<00:17, 21.80it/s]Scoring:   5%|▌         | 20/400 [00:01<00:16, 23.73it/s]Scoring:   6%|▌         | 23/400 [00:01<00:15, 24.41it/s]Scoring:   7%|▋         | 27/400 [00:01<00:14, 25.60it/s]Scoring:   8%|▊         | 31/400 [00:01<00:12, 28.82it/s]Scoring:   9%|▉         | 35/400 [00:01<00:12, 28.50it/s]Scoring:  10%|▉         | 39/400 [00:01<00:11, 30.78it/s]Scoring:  11%|█         | 43/400 [00:01<00:11, 31.87it/s]Scoring:  12%|█▏        | 47/400 [00:02<00:10, 33.75it/s]Scoring:  13%|█▎        | 51/400 [00:02<00:10, 34.47it/s]Scoring:  14%|█▍        | 55/400 [00:02<00:10, 32.48it/s]Scoring:  15%|█▍        | 59/400 [00:02<00:10, 31.51it/s]Scoring:  16%|█▌        | 63/400 [00:02<00:10, 31.18it/s]Scoring:  17%|█▋        | 67/400 [00:02<00:10, 31.92it/s]Scoring:  18%|█▊        | 71/400 [00:02<00:10, 32.57it/s]Scoring:  19%|█▉        | 75/400 [00:02<00:09, 32.83it/s]Scoring:  20%|█▉        | 79/400 [00:03<00:09, 34.30it/s]Scoring:  21%|██        | 83/400 [00:03<00:09, 34.50it/s]Scoring:  22%|██▏       | 87/400 [00:03<00:09, 33.56it/s]Scoring:  23%|██▎       | 91/400 [00:03<00:08, 34.45it/s]Scoring:  24%|██▍       | 95/400 [00:03<00:09, 33.21it/s]Scoring:  25%|██▍       | 99/400 [00:03<00:09, 33.30it/s]Scoring:  26%|██▌       | 103/400 [00:03<00:09, 30.79it/s]Scoring:  27%|██▋       | 107/400 [00:03<00:09, 32.38it/s]Scoring:  28%|██▊       | 111/400 [00:04<00:08, 33.30it/s]Scoring:  29%|██▉       | 115/400 [00:04<00:08, 33.91it/s]Scoring:  30%|██▉       | 119/400 [00:04<00:07, 35.33it/s]Scoring:  31%|███       | 123/400 [00:04<00:07, 35.19it/s]Scoring:  32%|███▏      | 127/400 [00:04<00:08, 32.07it/s]Scoring:  33%|███▎      | 131/400 [00:04<00:08, 32.39it/s]Scoring:  34%|███▍      | 136/400 [00:04<00:07, 34.77it/s]Scoring:  35%|███▌      | 140/400 [00:04<00:07, 34.17it/s]Scoring:  36%|███▌      | 144/400 [00:04<00:07, 34.88it/s]Scoring:  37%|███▋      | 148/400 [00:05<00:06, 36.03it/s]Scoring:  38%|███▊      | 152/400 [00:05<00:07, 34.45it/s]Scoring:  39%|███▉      | 156/400 [00:05<00:06, 35.90it/s]Scoring:  40%|████      | 160/400 [00:05<00:06, 36.93it/s]Scoring:  41%|████      | 164/400 [00:05<00:06, 37.13it/s]Scoring:  42%|████▏     | 169/400 [00:05<00:05, 38.70it/s]Scoring:  44%|████▎     | 174/400 [00:05<00:05, 39.42it/s]Scoring:  44%|████▍     | 178/400 [00:05<00:05, 37.47it/s]Scoring:  46%|████▌     | 182/400 [00:05<00:05, 36.97it/s]Scoring:  46%|████▋     | 186/400 [00:06<00:06, 34.58it/s]Scoring:  48%|████▊     | 190/400 [00:06<00:06, 34.35it/s]Scoring:  48%|████▊     | 194/400 [00:06<00:05, 35.08it/s]Scoring:  50%|████▉     | 198/400 [00:06<00:05, 36.05it/s]Scoring:  50%|█████     | 202/400 [00:06<00:05, 36.79it/s]Scoring:  52%|█████▏    | 206/400 [00:06<00:05, 36.34it/s]Scoring:  52%|█████▎    | 210/400 [00:06<00:05, 35.25it/s]Scoring:  54%|█████▎    | 214/400 [00:06<00:05, 33.96it/s]Scoring:  55%|█████▍    | 218/400 [00:07<00:05, 33.72it/s]Scoring:  56%|█████▌    | 222/400 [00:07<00:05, 35.24it/s]Scoring:  56%|█████▋    | 226/400 [00:07<00:04, 35.87it/s]Scoring:  57%|█████▊    | 230/400 [00:07<00:04, 36.04it/s]Scoring:  58%|█████▊    | 234/400 [00:07<00:04, 35.78it/s]Scoring:  60%|█████▉    | 238/400 [00:07<00:04, 36.58it/s]Scoring:  60%|██████    | 242/400 [00:07<00:04, 37.42it/s]Scoring:  62%|██████▏   | 246/400 [00:07<00:04, 37.98it/s]Scoring:  62%|██████▎   | 250/400 [00:07<00:03, 38.29it/s]Scoring:  64%|██████▎   | 254/400 [00:08<00:03, 36.51it/s]Scoring:  65%|██████▍   | 259/400 [00:08<00:03, 37.16it/s]Scoring:  66%|██████▌   | 264/400 [00:08<00:03, 38.52it/s]Scoring:  67%|██████▋   | 268/400 [00:08<00:03, 38.16it/s]Scoring:  68%|██████▊   | 272/400 [00:08<00:03, 36.90it/s]Scoring:  69%|██████▉   | 276/400 [00:08<00:03, 36.39it/s]Scoring:  70%|███████   | 281/400 [00:08<00:03, 38.59it/s]Scoring:  71%|███████▏  | 285/400 [00:08<00:03, 37.43it/s]Scoring:  72%|███████▏  | 289/400 [00:08<00:02, 37.57it/s]Scoring:  73%|███████▎  | 293/400 [00:09<00:02, 36.60it/s]Scoring:  74%|███████▍  | 298/400 [00:09<00:02, 38.28it/s]Scoring:  76%|███████▌  | 302/400 [00:09<00:02, 37.43it/s]Scoring:  76%|███████▋  | 306/400 [00:09<00:02, 35.94it/s]Scoring:  78%|███████▊  | 310/400 [00:09<00:02, 36.15it/s]Scoring:  78%|███████▊  | 314/400 [00:09<00:02, 35.45it/s]Scoring:  80%|███████▉  | 319/400 [00:09<00:02, 37.86it/s]Scoring:  81%|████████  | 324/400 [00:09<00:02, 37.83it/s]Scoring:  82%|████████▏ | 328/400 [00:09<00:01, 37.20it/s]Scoring:  83%|████████▎ | 332/400 [00:10<00:01, 36.69it/s]Scoring:  84%|████████▍ | 337/400 [00:10<00:01, 38.73it/s]Scoring:  85%|████████▌ | 341/400 [00:10<00:01, 38.57it/s]Scoring:  86%|████████▋ | 345/400 [00:10<00:01, 37.70it/s]Scoring:  88%|████████▊ | 350/400 [00:10<00:01, 36.38it/s]Scoring:  88%|████████▊ | 354/400 [00:10<00:01, 37.13it/s]Scoring:  90%|████████▉ | 359/400 [00:10<00:01, 37.21it/s]Scoring:  91%|█████████ | 363/400 [00:10<00:00, 37.02it/s]Scoring:  92%|█████████▏| 367/400 [00:11<00:00, 37.24it/s]Scoring:  93%|█████████▎| 372/400 [00:11<00:00, 36.98it/s]Scoring:  94%|█████████▍| 376/400 [00:11<00:00, 37.48it/s]Scoring:  95%|█████████▌| 381/400 [00:11<00:00, 38.73it/s]Scoring:  96%|█████████▋| 386/400 [00:11<00:00, 38.78it/s]Scoring:  98%|█████████▊| 390/400 [00:11<00:00, 38.59it/s]Scoring:  98%|█████████▊| 394/400 [00:11<00:00, 37.12it/s]Scoring: 100%|█████████▉| 398/400 [00:11<00:00, 37.87it/s]Scoring: 100%|██████████| 400/400 [00:11<00:00, 33.65it/s]
+✓ results saved → outputs/eval/rmb_safety_chosen_results.json
+✓ plot saved    → outputs/eval/rmb_safety_chosen_dist.png
+Forward pre-hook removed.
+
+Testing on RM-Bench safety_j...
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 185.82it/s]
+Scoring:   0%|          | 0/400 [00:00<?, ?it/s]Scoring:   0%|          | 1/400 [00:00<03:36,  1.84it/s]Scoring:   1%|          | 4/400 [00:00<00:53,  7.36it/s]Scoring:   2%|▏         | 7/400 [00:00<00:32, 12.06it/s]Scoring:   2%|▎         | 10/400 [00:00<00:24, 16.17it/s]Scoring:   4%|▎         | 14/400 [00:01<00:18, 20.47it/s]Scoring:   4%|▍         | 18/400 [00:01<00:16, 23.55it/s]Scoring:   5%|▌         | 21/400 [00:01<00:15, 23.69it/s]Scoring:   6%|▌         | 24/400 [00:01<00:15, 24.66it/s]Scoring:   7%|▋         | 27/400 [00:01<00:14, 25.75it/s]Scoring:   8%|▊         | 31/400 [00:01<00:13, 26.84it/s]Scoring:   9%|▉         | 35/400 [00:01<00:12, 28.18it/s]Scoring:  10%|▉         | 39/400 [00:01<00:11, 30.09it/s]Scoring:  11%|█         | 43/400 [00:02<00:12, 29.70it/s]Scoring:  12%|█▏        | 47/400 [00:02<00:11, 31.68it/s]Scoring:  13%|█▎        | 51/400 [00:02<00:10, 32.99it/s]Scoring:  14%|█▍        | 56/400 [00:02<00:09, 35.11it/s]Scoring:  15%|█▌        | 60/400 [00:02<00:09, 34.21it/s]Scoring:  16%|█▌        | 64/400 [00:02<00:10, 33.22it/s]Scoring:  17%|█▋        | 68/400 [00:02<00:10, 30.63it/s]Scoring:  18%|█▊        | 72/400 [00:02<00:10, 31.90it/s]Scoring:  19%|█▉        | 76/400 [00:03<00:10, 30.54it/s]Scoring:  20%|██        | 80/400 [00:03<00:09, 32.34it/s]Scoring:  21%|██        | 84/400 [00:03<00:09, 32.76it/s]Scoring:  22%|██▏       | 88/400 [00:03<00:09, 33.04it/s]Scoring:  23%|██▎       | 92/400 [00:03<00:09, 33.13it/s]Scoring:  24%|██▍       | 96/400 [00:03<00:09, 33.66it/s]Scoring:  25%|██▌       | 100/400 [00:03<00:09, 33.29it/s]Scoring:  26%|██▌       | 104/400 [00:03<00:08, 34.72it/s]Scoring:  27%|██▋       | 109/400 [00:03<00:08, 36.32it/s]Scoring:  28%|██▊       | 113/400 [00:04<00:07, 36.14it/s]Scoring:  29%|██▉       | 117/400 [00:04<00:08, 34.61it/s]Scoring:  30%|███       | 121/400 [00:04<00:07, 35.07it/s]Scoring:  31%|███▏      | 125/400 [00:04<00:08, 34.05it/s]Scoring:  32%|███▏      | 129/400 [00:04<00:08, 33.00it/s]Scoring:  33%|███▎      | 133/400 [00:04<00:07, 34.44it/s]Scoring:  34%|███▍      | 137/400 [00:04<00:07, 34.29it/s]Scoring:  35%|███▌      | 141/400 [00:04<00:07, 34.54it/s]Scoring:  36%|███▋      | 145/400 [00:05<00:07, 33.98it/s]Scoring:  37%|███▋      | 149/400 [00:05<00:07, 34.11it/s]Scoring:  38%|███▊      | 154/400 [00:05<00:06, 36.52it/s]Scoring:  40%|███▉      | 158/400 [00:05<00:06, 36.20it/s]Scoring:  40%|████      | 162/400 [00:05<00:06, 35.54it/s]Scoring:  42%|████▏     | 166/400 [00:05<00:06, 35.90it/s]Scoring:  42%|████▎     | 170/400 [00:05<00:06, 35.28it/s]Scoring:  44%|████▎     | 174/400 [00:05<00:06, 34.91it/s]Scoring:  44%|████▍     | 178/400 [00:05<00:06, 34.58it/s]Scoring:  46%|████▌     | 182/400 [00:06<00:06, 34.28it/s]Scoring:  46%|████▋     | 186/400 [00:06<00:06, 34.24it/s]Scoring:  48%|████▊     | 190/400 [00:06<00:05, 35.23it/s]Scoring:  48%|████▊     | 194/400 [00:06<00:05, 35.05it/s]Scoring:  50%|████▉     | 198/400 [00:06<00:05, 34.13it/s]Scoring:  50%|█████     | 202/400 [00:06<00:05, 35.16it/s]Scoring:  52%|█████▏    | 206/400 [00:06<00:05, 34.37it/s]Scoring:  52%|█████▎    | 210/400 [00:06<00:05, 34.95it/s]Scoring:  54%|█████▎    | 214/400 [00:06<00:05, 34.02it/s]Scoring:  55%|█████▍    | 218/400 [00:07<00:05, 34.49it/s]Scoring:  56%|█████▌    | 222/400 [00:07<00:05, 35.33it/s]Scoring:  56%|█████▋    | 226/400 [00:07<00:04, 35.12it/s]Scoring:  57%|█████▊    | 230/400 [00:07<00:04, 36.07it/s]Scoring:  59%|█████▉    | 235/400 [00:07<00:04, 36.98it/s]Scoring:  60%|█████▉    | 239/400 [00:07<00:04, 36.18it/s]Scoring:  61%|██████    | 243/400 [00:07<00:04, 35.82it/s]Scoring:  62%|██████▏   | 247/400 [00:07<00:04, 34.70it/s]Scoring:  63%|██████▎   | 251/400 [00:08<00:04, 35.77it/s]Scoring:  64%|██████▍   | 255/400 [00:08<00:04, 35.54it/s]Scoring:  65%|██████▍   | 259/400 [00:08<00:04, 34.20it/s]Scoring:  66%|██████▌   | 263/400 [00:08<00:04, 33.52it/s]Scoring:  67%|██████▋   | 267/400 [00:08<00:03, 34.98it/s]Scoring:  68%|██████▊   | 271/400 [00:08<00:03, 35.09it/s]Scoring:  69%|██████▉   | 276/400 [00:08<00:03, 35.38it/s]Scoring:  70%|███████   | 281/400 [00:08<00:03, 36.53it/s]Scoring:  71%|███████▏  | 285/400 [00:08<00:03, 35.83it/s]Scoring:  72%|███████▏  | 289/400 [00:09<00:03, 35.93it/s]Scoring:  73%|███████▎  | 293/400 [00:09<00:03, 35.19it/s]Scoring:  74%|███████▍  | 297/400 [00:09<00:02, 35.88it/s]Scoring:  75%|███████▌  | 301/400 [00:09<00:02, 36.15it/s]Scoring:  76%|███████▋  | 305/400 [00:09<00:02, 36.92it/s]Scoring:  77%|███████▋  | 309/400 [00:09<00:02, 37.43it/s]Scoring:  78%|███████▊  | 314/400 [00:09<00:02, 38.24it/s]Scoring:  80%|███████▉  | 318/400 [00:09<00:02, 35.75it/s]Scoring:  81%|████████  | 323/400 [00:09<00:02, 37.77it/s]Scoring:  82%|████████▏ | 327/400 [00:10<00:02, 34.83it/s]Scoring:  83%|████████▎ | 331/400 [00:10<00:02, 33.35it/s]Scoring:  84%|████████▍ | 336/400 [00:10<00:01, 35.97it/s]Scoring:  85%|████████▌ | 340/400 [00:10<00:01, 35.54it/s]Scoring:  86%|████████▋ | 345/400 [00:10<00:01, 37.42it/s]Scoring:  87%|████████▋ | 349/400 [00:10<00:01, 35.43it/s]Scoring:  88%|████████▊ | 354/400 [00:10<00:01, 36.79it/s]Scoring:  90%|████████▉ | 358/400 [00:10<00:01, 37.49it/s]Scoring:  91%|█████████ | 363/400 [00:11<00:00, 38.32it/s]Scoring:  92%|█████████▏| 368/400 [00:11<00:00, 38.57it/s]Scoring:  93%|█████████▎| 372/400 [00:11<00:00, 38.24it/s]Scoring:  94%|█████████▍| 376/400 [00:11<00:00, 37.12it/s]Scoring:  95%|█████████▌| 380/400 [00:11<00:00, 34.76it/s]Scoring:  96%|█████████▌| 384/400 [00:11<00:00, 33.60it/s]Scoring:  97%|█████████▋| 388/400 [00:11<00:00, 35.08it/s]Scoring:  98%|█████████▊| 392/400 [00:11<00:00, 34.62it/s]Scoring:  99%|█████████▉| 396/400 [00:12<00:00, 35.19it/s]Scoring: 100%|██████████| 400/400 [00:12<00:00, 32.96it/s]
+✓ results saved → outputs/eval/rmb_safety_rejected_results.json
+✓ plot saved    → outputs/eval/rmb_safety_rejected_dist.png
+Forward pre-hook removed.
+
+[Step 4/4] Generating evaluation report...
+
+======================================================================
+STEERING EVALUATION REPORT
+======================================================================
+
+Steering action: Suppress (multiply by 0) safety-harming features
+
+Suppressed features: ['48659', '28879', '26446', '46231', '25241']
+
+----------------------------------------------------------------------
+Dataset                        N       Before        After      Delta
+----------------------------------------------------------------------
+RB2 Safety Chosen            400      -0.0228      -0.0228    +0.0000
+RB2 Safety Rejected          400      -0.1065      -0.1057    +0.0008
+RMB Safety Chosen            400      -0.0238      -0.0238    +0.0000
+RMB Safety Rejected          400      -0.1309      -0.1296    +0.0012
+----------------------------------------------------------------------
+
+INTERPRETATION:
+
+✓ RB2 Safety Chosen: Minimal change (+0.0000) - good specificity
+○ RB2 Safety Rejected: Minimal change (+0.0008)
+✓ RMB Safety Chosen: Minimal change (+0.0000) - good specificity
+○ RMB Safety Rejected: Minimal change (+0.0012)
+
+======================================================================
+
+Report saved to outputs/eval/evaluation_report.txt
+
+==============================================
+Evaluation Complete!
+==============================================
+
+Results:
+  - Steering config:      outputs/eval/steering_config.json
+  - RB2 chosen results:   outputs/eval/rb2_safety_chosen_results.json
+  - RB2 rejected results: outputs/eval/rb2_safety_rejected_results.json
+  - RMB chosen results:   outputs/eval/rmb_safety_chosen_results.json
+  - RMB rejected results: outputs/eval/rmb_safety_rejected_results.json
+  - Distribution plots:   outputs/eval/*_dist.png
+  - Evaluation report:    outputs/eval/evaluation_report.txt
+Using pip 25.3 from /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/pip (python 3.10)
+Collecting flash-attn
+  Using cached flash_attn-2.8.3.tar.gz (8.4 MB)
+  Preparing metadata (pyproject.toml): started
+  Running command Preparing metadata (pyproject.toml)
+  /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/setuptools/dist.py:759: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+  !!
+
+          ********************************************************************************
+          Please consider removing the following classifiers in favor of a SPDX license expression:
+
+          License :: OSI Approved :: BSD License
+
+          See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+          ********************************************************************************
+
+  !!
+    self._finalize_license_expression()
+
+
+  torch.__version__  = 2.9.1+cu128
+
+
+  running dist_info
+  creating /tmp/pip-modern-metadata-1wq1v6i7/flash_attn.egg-info
+  writing /tmp/pip-modern-metadata-1wq1v6i7/flash_attn.egg-info/PKG-INFO
+  writing dependency_links to /tmp/pip-modern-metadata-1wq1v6i7/flash_attn.egg-info/dependency_links.txt
+  writing requirements to /tmp/pip-modern-metadata-1wq1v6i7/flash_attn.egg-info/requires.txt
+  writing top-level names to /tmp/pip-modern-metadata-1wq1v6i7/flash_attn.egg-info/top_level.txt
+  writing manifest file '/tmp/pip-modern-metadata-1wq1v6i7/flash_attn.egg-info/SOURCES.txt'
+  W1212 19:38:17.765000 31609 site-packages/torch/utils/cpp_extension.py:630] Attempted to use ninja as the BuildExtension backend but we could not find ninja.. Falling back to using the slow distutils backend.
+  reading manifest file '/tmp/pip-modern-metadata-1wq1v6i7/flash_attn.egg-info/SOURCES.txt'
+  reading manifest template 'MANIFEST.in'
+  warning: no files found matching '*.cu' under directory 'flash_attn'
+  warning: no files found matching '*.h' under directory 'flash_attn'
+  warning: no files found matching '*.cuh' under directory 'flash_attn'
+  warning: no files found matching '*.cpp' under directory 'flash_attn'
+  warning: no files found matching '*.hpp' under directory 'flash_attn'
+  adding license file 'LICENSE'
+  adding license file 'AUTHORS'
+  writing manifest file '/tmp/pip-modern-metadata-1wq1v6i7/flash_attn.egg-info/SOURCES.txt'
+  creating '/tmp/pip-modern-metadata-1wq1v6i7/flash_attn-2.8.3.dist-info'
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: torch in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from flash-attn) (2.9.1)
+Collecting einops (from flash-attn)
+  Obtaining dependency information for einops from https://files.pythonhosted.org/packages/87/62/9773de14fe6c45c23649e98b83231fffd7b9892b6cf863251dc2afa73643/einops-0.8.1-py3-none-any.whl.metadata
+  Using cached einops-0.8.1-py3-none-any.whl.metadata (13 kB)
+Requirement already satisfied: filelock in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (3.20.0)
+Requirement already satisfied: typing-extensions>=4.10.0 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (4.15.0)
+Requirement already satisfied: sympy>=1.13.3 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (1.14.0)
+Requirement already satisfied: networkx>=2.5.1 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (3.4.2)
+Requirement already satisfied: jinja2 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (3.1.6)
+Requirement already satisfied: fsspec>=0.8.5 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (2025.10.0)
+Requirement already satisfied: nvidia-cuda-nvrtc-cu12==12.8.93 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.93)
+Requirement already satisfied: nvidia-cuda-runtime-cu12==12.8.90 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.90)
+Requirement already satisfied: nvidia-cuda-cupti-cu12==12.8.90 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.90)
+Requirement already satisfied: nvidia-cudnn-cu12==9.10.2.21 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (9.10.2.21)
+Requirement already satisfied: nvidia-cublas-cu12==12.8.4.1 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.4.1)
+Requirement already satisfied: nvidia-cufft-cu12==11.3.3.83 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (11.3.3.83)
+Requirement already satisfied: nvidia-curand-cu12==10.3.9.90 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (10.3.9.90)
+Requirement already satisfied: nvidia-cusolver-cu12==11.7.3.90 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (11.7.3.90)
+Requirement already satisfied: nvidia-cusparse-cu12==12.5.8.93 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.5.8.93)
+Requirement already satisfied: nvidia-cusparselt-cu12==0.7.1 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (0.7.1)
+Requirement already satisfied: nvidia-nccl-cu12==2.27.5 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (2.27.5)
+Requirement already satisfied: nvidia-nvshmem-cu12==3.3.20 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (3.3.20)
+Requirement already satisfied: nvidia-nvtx-cu12==12.8.90 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.90)
+Requirement already satisfied: nvidia-nvjitlink-cu12==12.8.93 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (12.8.93)
+Requirement already satisfied: nvidia-cufile-cu12==1.13.1.3 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (1.13.1.3)
+Requirement already satisfied: triton==3.5.1 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from torch->flash-attn) (3.5.1)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from sympy>=1.13.3->torch->flash-attn) (1.3.0)
+Requirement already satisfied: MarkupSafe>=2.0 in /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages (from jinja2->torch->flash-attn) (3.0.3)
+Using cached einops-0.8.1-py3-none-any.whl (64 kB)
+Building wheels for collected packages: flash-attn
+  Building wheel for flash-attn (pyproject.toml): started
+  Running command Building wheel for flash-attn (pyproject.toml)
+  /home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/setuptools/dist.py:759: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+  !!
+
+          ********************************************************************************
+          Please consider removing the following classifiers in favor of a SPDX license expression:
+
+          License :: OSI Approved :: BSD License
+
+          See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+          ********************************************************************************
+
+  !!
+    self._finalize_license_expression()
+
+
+  torch.__version__  = 2.9.1+cu128
+
+
+  running bdist_wheel
+  W1212 19:38:20.314000 31676 site-packages/torch/utils/cpp_extension.py:630] Attempted to use ninja as the BuildExtension backend but we could not find ninja.. Falling back to using the slow distutils backend.
+  Guessing wheel URL:  https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp310-cp310-linux_x86_64.whl
+  Precompiled wheel not found. Building from source...
+  running build
+  running build_py
+  creating build/lib.linux-x86_64-cpython-310/flash_attn
+  copying flash_attn/flash_blocksparse_attn_interface.py -> build/lib.linux-x86_64-cpython-310/flash_attn
+  copying flash_attn/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn
+  copying flash_attn/flash_blocksparse_attention.py -> build/lib.linux-x86_64-cpython-310/flash_attn
+  copying flash_attn/flash_attn_triton_og.py -> build/lib.linux-x86_64-cpython-310/flash_attn
+  copying flash_attn/flash_attn_triton.py -> build/lib.linux-x86_64-cpython-310/flash_attn
+  copying flash_attn/flash_attn_interface.py -> build/lib.linux-x86_64-cpython-310/flash_attn
+  copying flash_attn/bert_padding.py -> build/lib.linux-x86_64-cpython-310/flash_attn
+  creating build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/benchmark_flash_attention_fp8.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/test_flash_attn.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/benchmark_attn.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/benchmark_mla_decode.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/test_kvcache.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/__init__.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/setup.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/padding.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/test_attn_kvcache.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/test_util.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/benchmark_split_kv.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/generate_kernels.py -> build/lib.linux-x86_64-cpython-310/hopper
+  copying hopper/flash_attn_interface.py -> build/lib.linux-x86_64-cpython-310/hopper
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/layers
+  copying flash_attn/layers/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/layers
+  copying flash_attn/layers/rotary.py -> build/lib.linux-x86_64-cpython-310/flash_attn/layers
+  copying flash_attn/layers/patch_embed.py -> build/lib.linux-x86_64-cpython-310/flash_attn/layers
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/distributed.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/pretrained.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/torch.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/library.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/benchmark.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/generation.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  copying flash_attn/utils/testing.py -> build/lib.linux-x86_64-cpython-310/flash_attn/utils
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/blackwell_helpers.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/fast_math.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/block_info.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/tile_scheduler.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/seqlen_info.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/interface.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/mask.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/flash_bwd_postprocess.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/flash_bwd_preprocess.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/mma_sm100_desc.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/flash_fwd.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/flash_fwd_sm100.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/pack_gqa.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/utils.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/hopper_helpers.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/pipeline.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/softmax.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/flash_bwd.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/ampere_helpers.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  copying flash_attn/cute/named_barrier.py -> build/lib.linux-x86_64-cpython-310/flash_attn/cute
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/ops
+  copying flash_attn/ops/activations.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops
+  copying flash_attn/ops/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops
+  copying flash_attn/ops/fused_dense.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops
+  copying flash_attn/ops/layer_norm.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops
+  copying flash_attn/ops/rms_norm.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/bwd_prefill_fused.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/fp8.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/bwd_ref.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/bwd_prefill.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/test.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/interface_fa.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/fwd_prefill.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/bwd_prefill_split.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/bench.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/train.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/fwd_ref.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/utils.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/fwd_decode.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  copying flash_attn/flash_attn_triton_amd/bwd_prefill_onekernel.py -> build/lib.linux-x86_64-cpython-310/flash_attn/flash_attn_triton_amd
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/gpt.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/opt.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/gpt_neox.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/falcon.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/vit.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/btlm.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/baichuan.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/gptj.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/llama.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/bigcode.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  copying flash_attn/models/bert.py -> build/lib.linux-x86_64-cpython-310/flash_attn/models
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/losses
+  copying flash_attn/losses/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/losses
+  copying flash_attn/losses/cross_entropy.py -> build/lib.linux-x86_64-cpython-310/flash_attn/losses
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/modules
+  copying flash_attn/modules/mlp.py -> build/lib.linux-x86_64-cpython-310/flash_attn/modules
+  copying flash_attn/modules/embedding.py -> build/lib.linux-x86_64-cpython-310/flash_attn/modules
+  copying flash_attn/modules/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/modules
+  copying flash_attn/modules/mha.py -> build/lib.linux-x86_64-cpython-310/flash_attn/modules
+  copying flash_attn/modules/block.py -> build/lib.linux-x86_64-cpython-310/flash_attn/modules
+  creating build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  copying flash_attn/ops/triton/mlp.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  copying flash_attn/ops/triton/__init__.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  copying flash_attn/ops/triton/k_activations.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  copying flash_attn/ops/triton/cross_entropy.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  copying flash_attn/ops/triton/layer_norm.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  copying flash_attn/ops/triton/rotary.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  copying flash_attn/ops/triton/linear.py -> build/lib.linux-x86_64-cpython-310/flash_attn/ops/triton
+  running build_ext
+  W1212 19:38:20.337000 31676 site-packages/torch/utils/cpp_extension.py:531] There are no g++ version bounds defined for CUDA version 12.8
+  building 'flash_attn_2_cuda' extension
+  creating build/temp.linux-x86_64-cpython-310/csrc/flash_attn
+  creating build/temp.linux-x86_64-cpython-310/csrc/flash_attn/src
+  g++ -pthread -B /home/ubuntu/miniconda3/envs/sarm/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -fwrapv -O2 -Wall -fPIC -O2 -isystem /home/ubuntu/miniconda3/envs/sarm/include -fPIC -O2 -isystem /home/ubuntu/miniconda3/envs/sarm/include -fPIC -I/tmp/pip-install-619zxr5_/flash-attn_a76f345d26f842c984811b78f9528264/csrc/flash_attn -I/tmp/pip-install-619zxr5_/flash-attn_a76f345d26f842c984811b78f9528264/csrc/flash_attn/src -I/tmp/pip-install-619zxr5_/flash-attn_a76f345d26f842c984811b78f9528264/csrc/cutlass/include -I/home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/torch/include -I/home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -I/home/ubuntu/miniconda3/envs/sarm/include/python3.10 -c csrc/flash_attn/flash_api.cpp -o build/temp.linux-x86_64-cpython-310/csrc/flash_attn/flash_api.o -O3 -std=c++17 -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=flash_attn_2_cuda
+  /usr/bin/nvcc -I/tmp/pip-install-619zxr5_/flash-attn_a76f345d26f842c984811b78f9528264/csrc/flash_attn -I/tmp/pip-install-619zxr5_/flash-attn_a76f345d26f842c984811b78f9528264/csrc/flash_attn/src -I/tmp/pip-install-619zxr5_/flash-attn_a76f345d26f842c984811b78f9528264/csrc/cutlass/include -I/home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/torch/include -I/home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -I/home/ubuntu/miniconda3/envs/sarm/include/python3.10 -c csrc/flash_attn/src/flash_bwd_hdim128_bf16_causal_sm80.cu -o build/temp.linux-x86_64-cpython-310/csrc/flash_attn/src/flash_bwd_hdim128_bf16_causal_sm80.o -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options '-fPIC' -O3 -std=c++17 -U__CUDA_NO_HALF_OPERATORS__ -U__CUDA_NO_HALF_CONVERSIONS__ -U__CUDA_NO_HALF2_OPERATORS__ -U__CUDA_NO_BFLOAT16_CONVERSIONS__ --expt-relaxed-constexpr --expt-extended-lambda --use_fast_math -gencode arch=compute_90,code=sm_90 --threads 4 -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=flash_attn_2_cuda
+  /usr/bin/nvcc -I/tmp/pip-install-619zxr5_/flash-attn_a76f345d26f842c984811b78f9528264/csrc/flash_attn -I/tmp/pip-install-619zxr5_/flash-attn_a76f345d26f842c984811b78f9528264/csrc/flash_attn/src -I/tmp/pip-install-619zxr5_/flash-attn_a76f345d26f842c984811b78f9528264/csrc/cutlass/include -I/home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/torch/include -I/home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -I/home/ubuntu/miniconda3/envs/sarm/include/python3.10 -c csrc/flash_attn/src/flash_bwd_hdim128_bf16_sm80.cu -o build/temp.linux-x86_64-cpython-310/csrc/flash_attn/src/flash_bwd_hdim128_bf16_sm80.o -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options '-fPIC' -O3 -std=c++17 -U__CUDA_NO_HALF_OPERATORS__ -U__CUDA_NO_HALF_CONVERSIONS__ -U__CUDA_NO_HALF2_OPERATORS__ -U__CUDA_NO_BFLOAT16_CONVERSIONS__ --expt-relaxed-constexpr --expt-extended-lambda --use_fast_math -gencode arch=compute_90,code=sm_90 --threads 4 -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=flash_attn_2_cuda

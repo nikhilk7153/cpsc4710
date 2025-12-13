@@ -1,0 +1,28 @@
+{
+  "experiment_name": "baseline",
+  "total_steps": 100,
+  "metrics_path": "outputs/experiments/baseline/baseline_metrics.csv",
+  "final_metrics": {
+    "step": 100,
+    "timestamp": 1345.736160993576,
+    "total_reward": -0.1220703125,
+    "rm_score": -0.1220703125,
+    "indicator_penalty": 0.0,
+    "kl_penalty": 0.0,
+    "response_length_mean": 256.0,
+    "response_length_std": 0.0,
+    "ppo_loss": 0.29472222924232483,
+    "policy_loss": -0.0022157877683639526,
+    "value_loss": 0.58203125,
+    "entropy": 5.034802436828613,
+    "approx_kl": -0.001412034034729004,
+    "clip_fraction": 0.0,
+    "reward_mean": -0.1220703125,
+    "reward_std": 0.005859375,
+    "reward_min": -0.1259765625,
+    "reward_max": -0.11767578125,
+    "advantage_mean": -0.181640625,
+    "advantage_std": 1.03125,
+    "gpu_memory_gb": 37.46552576
+  }
+}

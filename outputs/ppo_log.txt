@@ -1,0 +1,17 @@
+/home/ubuntu/cpsc4710/ppo_feature_control_sarm.py:253: TRLExperimentalWarning: You are importing from 'trl.experimental'. APIs here are unstable and may change or be removed without notice. Silence this warning by setting environment variable TRL_EXPERIMENTAL_SILENCE=1.
+  from trl.experimental.ppo import PPOConfig, PPOTrainer
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:00<00:01,  2.08it/s]Loading checkpoint shards:  50%|█████     | 2/4 [00:00<00:00,  2.08it/s]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:01<00:00,  2.10it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:01<00:00,  3.01it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:01<00:00,  2.59it/s]
+WARNING:root:A <class 'transformers.models.llama.modeling_llama.LlamaForCausalLM'> model is loaded from 'meta-llama/Llama-3.1-8B-Instruct', and no v_head weight is found. This IS expected if you are not resuming PPO training.
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:00<00:00,  1.26it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:01<00:00,  1.41it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:01<00:00,  1.38it/s]
+Map:   0%|          | 0/3184 [00:00<?, ? examples/s]Map:  30%|███       | 968/3184 [00:00<00:00, 9622.06 examples/s]Map:  70%|███████   | 2233/3184 [00:00<00:00, 8805.02 examples/s]Map: 100%|██████████| 3184/3184 [00:00<00:00, 6956.48 examples/s]Map: 100%|██████████| 3184/3184 [00:00<00:00, 7411.23 examples/s]
+Traceback (most recent call last):
+  File "/home/ubuntu/cpsc4710/ppo_feature_control_sarm.py", line 508, in <module>
+    main()
+    ~~~~^^
+  File "/home/ubuntu/cpsc4710/ppo_feature_control_sarm.py", line 292, in main
+    config = PPOConfig(
+        model_name=args.policy_model,
+    ...<3 lines>...
+        ppo_epochs=args.ppo_epochs,
+    )
+TypeError: PPOConfig.__init__() got an unexpected keyword argument 'model_name'. Did you mean 'label_names'?

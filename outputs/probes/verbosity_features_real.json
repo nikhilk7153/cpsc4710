@@ -1,0 +1,83 @@
+{
+  "verbosity_features": [
+    10157,
+    29733,
+    6326,
+    60848,
+    3402
+  ],
+  "top_differential": [
+    {
+      "feature": 10157,
+      "chosen_mean": 1.265625,
+      "rejected_mean": 9.0625,
+      "diff": 7.8125,
+      "weight": -8.20159912109375e-05
+    },
+    {
+      "feature": 29733,
+      "chosen_mean": 1.0234375,
+      "rejected_mean": 8.375,
+      "diff": 7.34375,
+      "weight": -0.00012159347534179688
+    },
+    {
+      "feature": 6326,
+      "chosen_mean": 0.23828125,
+      "rejected_mean": 7.1875,
+      "diff": 6.9375,
+      "weight": -0.00010204315185546875
+    },
+    {
+      "feature": 60848,
+      "chosen_mean": 0.123046875,
+      "rejected_mean": 6.90625,
+      "diff": 6.78125,
+      "weight": -9.679794311523438e-05
+    },
+    {
+      "feature": 3402,
+      "chosen_mean": 0.14453125,
+      "rejected_mean": 6.65625,
+      "diff": 6.5,
+      "weight": -0.00010585784912109375
+    },
+    {
+      "feature": 38484,
+      "chosen_mean": 0.423828125,
+      "rejected_mean": 6.8125,
+      "diff": 6.375,
+      "weight": -8.726119995117188e-05
+    },
+    {
+      "feature": 30565,
+      "chosen_mean": 1.3359375,
+      "rejected_mean": 7.65625,
+      "diff": 6.3125,
+      "weight": -0.00010156631469726562
+    },
+    {
+      "feature": 21280,
+      "chosen_mean": 0.11865234375,
+      "rejected_mean": 6.40625,
+      "diff": 6.28125,
+      "weight": -0.00011396408081054688
+    },
+    {
+      "feature": 10347,
+      "chosen_mean": 0.1826171875,
+      "rejected_mean": 6.40625,
+      "diff": 6.21875,
+      "weight": -9.059906005859375e-05
+    },
+    {
+      "feature": 38540,
+      "chosen_mean": 0.380859375,
+      "rejected_mean": 6.53125,
+      "diff": 6.15625,
+      "weight": -9.822845458984375e-05
+    }
+  ],
+  "method": "differential_activation_real_data",
+  "n_samples": 85
+}

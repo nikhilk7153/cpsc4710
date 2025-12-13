@@ -1,0 +1,119 @@
+======================================================================
+PPO WITH FULL FINE-TUNING (ALL PARAMETERS)
+======================================================================
+Policy Model: Qwen/Qwen2.5-1.5B-Instruct
+Reward Model: Schrieffer/Llama-SARM-4B
+Training Steps: 100
+======================================================================
+
+Loading RewardBench-2 Math prompts...
+Loaded 183 real math problems
+
+Example prompts:
+  - name for 10^303...
+  - ________ J = 2.45 x 1020 eV....
+  - A sample of 10.6 g of KNO3 was dissolved in 251.0 g of water at 25 oC in a calor...
+
+Loading SARM reward model...
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:01<00:01,  1.01s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:01<00:00,  1.22it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:01<00:00,  1.18it/s]
+
+Loading Qwen/Qwen2.5-1.5B-Instruct for FULL fine-tuning...
+
+Total parameters: 1,543,714,304
+Trainable parameters: 1,543,714,304 (100.0%)
+
+======================================================================
+BASELINE EVALUATION (before training)
+======================================================================
+Baseline eval:   0%|          | 0/20 [00:00<?, ?it/s]/home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/transformers/generation/configuration_utils.py:567: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.7` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+  warnings.warn(
+/home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/transformers/generation/configuration_utils.py:572: UserWarning: `do_sample` is set to `False`. However, `top_p` is set to `0.8` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+  warnings.warn(
+/home/ubuntu/miniconda3/envs/sarm/lib/python3.10/site-packages/transformers/generation/configuration_utils.py:589: UserWarning: `do_sample` is set to `False`. However, `top_k` is set to `20` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_k`.
+  warnings.warn(
+Baseline eval:   5%|▌         | 1/20 [00:02<00:51,  2.71s/it]Baseline eval:  10%|█         | 2/20 [00:04<00:44,  2.45s/it]Baseline eval:  15%|█▌        | 3/20 [00:07<00:40,  2.37s/it]Baseline eval:  20%|██        | 4/20 [00:09<00:37,  2.33s/it]Baseline eval:  25%|██▌       | 5/20 [00:11<00:34,  2.31s/it]Baseline eval:  30%|███       | 6/20 [00:14<00:31,  2.28s/it]Baseline eval:  35%|███▌      | 7/20 [00:16<00:29,  2.28s/it]Baseline eval:  40%|████      | 8/20 [00:18<00:27,  2.27s/it]Baseline eval:  45%|████▌     | 9/20 [00:20<00:24,  2.26s/it]Baseline eval:  50%|█████     | 10/20 [00:23<00:22,  2.25s/it]Baseline eval:  55%|█████▌    | 11/20 [00:25<00:20,  2.25s/it]Baseline eval:  60%|██████    | 12/20 [00:27<00:18,  2.26s/it]Baseline eval:  65%|██████▌   | 13/20 [00:29<00:15,  2.26s/it]Baseline eval:  70%|███████   | 14/20 [00:32<00:13,  2.25s/it]Baseline eval:  75%|███████▌  | 15/20 [00:34<00:11,  2.25s/it]Baseline eval:  80%|████████  | 16/20 [00:36<00:09,  2.25s/it]Baseline eval:  85%|████████▌ | 17/20 [00:38<00:06,  2.25s/it]Baseline eval:  90%|█████████ | 18/20 [00:41<00:04,  2.25s/it]Baseline eval:  95%|█████████▌| 19/20 [00:43<00:02,  2.25s/it]Baseline eval: 100%|██████████| 20/20 [00:45<00:00,  2.26s/it]Baseline eval: 100%|██████████| 20/20 [00:45<00:00,  2.28s/it]
+
+Baseline SARM Score: -0.1003
+
+Sample responses:
+  Q: Which of the following is a probability density function?
+Se...
+  A: To determine which of the given options represents a probability density function (PDF), we need to ...
+  Score: -0.0762
+
+  Q: For f’(x) = \frac{-3x^2 + 2x - 11}{(x^2 - 2x - 3)^2}, find x...
+  A: To solve for \( x \) when \( f'(x) = 0 \), we need to set the derivative equal to zero and solve for...
+  Score: -0.0903
+
+  Q: The diagram shows isosceles trapezoid LMNP. It also shows ho...
+  A: To determine the measure of angle ONP in the given isosceles trapezoid LMNP with the additional info...
+  Score: -0.1279
+
+
+======================================================================
+TRAINING (FULL FINE-TUNING)
+======================================================================
+PPO Steps:   0%|          | 0/100 [00:00<?, ?it/s]/home/ubuntu/cpsc4710/scripts/ppo_full_small_model.py:176: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+PPO Steps:   1%|          | 1/100 [00:02<04:18,  2.62s/it]PPO Steps:   2%|▏         | 2/100 [00:05<04:08,  2.53s/it]PPO Steps:   3%|▎         | 3/100 [00:07<04:03,  2.51s/it]PPO Steps:   4%|▍         | 4/100 [00:10<03:59,  2.50s/it]PPO Steps:   5%|▌         | 5/100 [00:12<03:56,  2.49s/it]PPO Steps:   6%|▌         | 6/100 [00:15<03:53,  2.49s/it]PPO Steps:   7%|▋         | 7/100 [00:17<03:51,  2.49s/it]PPO Steps:   8%|▊         | 8/100 [00:19<03:47,  2.47s/it]PPO Steps:   9%|▉         | 9/100 [00:22<03:43,  2.46s/it]PPO Steps:  10%|█         | 10/100 [00:24<03:42,  2.47s/it]PPO Steps:  11%|█         | 11/100 [00:27<03:39,  2.47s/it]PPO Steps:  12%|█▏        | 12/100 [00:29<03:36,  2.47s/it]PPO Steps:  13%|█▎        | 13/100 [00:32<03:33,  2.45s/it]PPO Steps:  14%|█▍        | 14/100 [00:34<03:31,  2.46s/it]PPO Steps:  15%|█▌        | 15/100 [00:37<03:29,  2.47s/it]PPO Steps:  16%|█▌        | 16/100 [00:39<03:27,  2.46s/it]PPO Steps:  17%|█▋        | 17/100 [00:42<03:24,  2.46s/it]PPO Steps:  18%|█▊        | 18/100 [00:44<03:21,  2.46s/it]PPO Steps:  19%|█▉        | 19/100 [00:47<03:19,  2.47s/it]PPO Steps:  20%|██        | 20/100 [00:49<03:18,  2.48s/it]PPO Steps:  21%|██        | 21/100 [00:51<03:14,  2.46s/it]PPO Steps:  22%|██▏       | 22/100 [00:54<03:11,  2.45s/it]PPO Steps:  23%|██▎       | 23/100 [00:56<03:08,  2.45s/it]PPO Steps:  24%|██▍       | 24/100 [00:57<02:32,  2.01s/it]PPO Steps:  25%|██▌       | 25/100 [01:00<02:40,  2.13s/it]PPO Steps:  26%|██▌       | 26/100 [01:02<02:45,  2.23s/it]PPO Steps:  27%|██▋       | 27/100 [01:05<02:47,  2.30s/it]PPO Steps:  28%|██▊       | 28/100 [01:07<02:47,  2.33s/it]PPO Steps:  29%|██▉       | 29/100 [01:09<02:47,  2.36s/it]PPO Steps:  30%|███       | 30/100 [01:12<02:46,  2.38s/it]PPO Steps:  31%|███       | 31/100 [01:14<02:45,  2.40s/it]PPO Steps:  32%|███▏      | 32/100 [01:17<02:44,  2.42s/it]PPO Steps:  33%|███▎      | 33/100 [01:19<02:42,  2.43s/it]PPO Steps:  34%|███▍      | 34/100 [01:22<02:40,  2.43s/it]PPO Steps:  35%|███▌      | 35/100 [01:24<02:38,  2.43s/it]PPO Steps:  36%|███▌      | 36/100 [01:27<02:35,  2.44s/it]PPO Steps:  37%|███▋      | 37/100 [01:29<02:33,  2.44s/it]PPO Steps:  38%|███▊      | 38/100 [01:31<02:31,  2.44s/it]PPO Steps:  39%|███▉      | 39/100 [01:34<02:28,  2.44s/it]PPO Steps:  40%|████      | 40/100 [01:36<02:26,  2.45s/it]PPO Steps:  41%|████      | 41/100 [01:39<02:24,  2.45s/it]PPO Steps:  42%|████▏     | 42/100 [01:41<02:21,  2.44s/it]PPO Steps:  43%|████▎     | 43/100 [01:44<02:19,  2.44s/it]PPO Steps:  44%|████▍     | 44/100 [01:46<02:16,  2.44s/it]PPO Steps:  45%|████▌     | 45/100 [01:49<02:14,  2.44s/it]PPO Steps:  46%|████▌     | 46/100 [01:51<02:11,  2.44s/it]PPO Steps:  47%|████▋     | 47/100 [01:53<02:09,  2.44s/it]PPO Steps:  48%|████▊     | 48/100 [01:56<02:06,  2.44s/it]PPO Steps:  49%|████▉     | 49/100 [01:58<02:04,  2.43s/it]PPO Steps:  50%|█████     | 50/100 [02:01<02:02,  2.44s/it]PPO Steps:  51%|█████     | 51/100 [02:03<02:00,  2.45s/it]PPO Steps:  52%|█████▏    | 52/100 [02:06<01:57,  2.45s/it]PPO Steps:  53%|█████▎    | 53/100 [02:08<01:54,  2.44s/it]PPO Steps:  54%|█████▍    | 54/100 [02:11<01:52,  2.44s/it]PPO Steps:  55%|█████▌    | 55/100 [02:13<01:49,  2.44s/it]PPO Steps:  56%|█████▌    | 56/100 [02:15<01:47,  2.44s/it]PPO Steps:  57%|█████▋    | 57/100 [02:18<01:44,  2.44s/it]PPO Steps:  58%|█████▊    | 58/100 [02:20<01:42,  2.45s/it]PPO Steps:  59%|█████▉    | 59/100 [02:23<01:39,  2.44s/it]PPO Steps:  60%|██████    | 60/100 [02:25<01:37,  2.43s/it]PPO Steps:  61%|██████    | 61/100 [02:28<01:35,  2.45s/it]PPO Steps:  62%|██████▏   | 62/100 [02:30<01:33,  2.45s/it]PPO Steps:  63%|██████▎   | 63/100 [02:33<01:30,  2.46s/it]PPO Steps:  64%|██████▍   | 64/100 [02:35<01:28,  2.46s/it]PPO Steps:  65%|██████▌   | 65/100 [02:38<01:26,  2.46s/it]PPO Steps:  66%|██████▌   | 66/100 [02:40<01:23,  2.46s/it]PPO Steps:  67%|██████▋   | 67/100 [02:42<01:20,  2.44s/it]PPO Steps:  68%|██████▊   | 68/100 [02:45<01:18,  2.44s/it]PPO Steps:  69%|██████▉   | 69/100 [02:47<01:15,  2.44s/it]PPO Steps:  70%|███████   | 70/100 [02:50<01:13,  2.44s/it]PPO Steps:  71%|███████   | 71/100 [02:52<01:10,  2.45s/it]PPO Steps:  72%|███████▏  | 72/100 [02:55<01:08,  2.44s/it]PPO Steps:  73%|███████▎  | 73/100 [02:57<01:05,  2.44s/it]PPO Steps:  74%|███████▍  | 74/100 [02:59<01:03,  2.43s/it]PPO Steps:  75%|███████▌  | 75/100 [03:02<01:00,  2.43s/it]PPO Steps:  76%|███████▌  | 76/100 [03:04<00:58,  2.43s/it]PPO Steps:  77%|███████▋  | 77/100 [03:07<00:56,  2.44s/it]PPO Steps:  78%|███████▊  | 78/100 [03:09<00:53,  2.45s/it]PPO Steps:  79%|███████▉  | 79/100 [03:12<00:51,  2.45s/it]PPO Steps:  80%|████████  | 80/100 [03:14<00:49,  2.45s/it]PPO Steps:  81%|████████  | 81/100 [03:17<00:46,  2.45s/it]PPO Steps:  82%|████████▏ | 82/100 [03:19<00:44,  2.45s/it]PPO Steps:  83%|████████▎ | 83/100 [03:22<00:41,  2.46s/it]PPO Steps:  84%|████████▍ | 84/100 [03:24<00:39,  2.46s/it]PPO Steps:  85%|████████▌ | 85/100 [03:26<00:36,  2.45s/it]PPO Steps:  86%|████████▌ | 86/100 [03:29<00:34,  2.44s/it]PPO Steps:  87%|████████▋ | 87/100 [03:31<00:31,  2.43s/it]PPO Steps:  88%|████████▊ | 88/100 [03:34<00:29,  2.43s/it]PPO Steps:  89%|████████▉ | 89/100 [03:36<00:26,  2.44s/it]PPO Steps:  90%|█████████ | 90/100 [03:39<00:24,  2.44s/it]PPO Steps:  91%|█████████ | 91/100 [03:41<00:22,  2.45s/it]PPO Steps:  92%|█████████▏| 92/100 [03:43<00:19,  2.44s/it]PPO Steps:  93%|█████████▎| 93/100 [03:46<00:17,  2.44s/it]PPO Steps:  94%|█████████▍| 94/100 [03:48<00:14,  2.44s/it]PPO Steps:  95%|█████████▌| 95/100 [03:51<00:12,  2.43s/it]PPO Steps:  96%|█████████▌| 96/100 [03:53<00:09,  2.43s/it]PPO Steps:  97%|█████████▋| 97/100 [03:56<00:07,  2.43s/it]PPO Steps:  98%|█████████▊| 98/100 [03:58<00:04,  2.31s/it]PPO Steps:  99%|█████████▉| 99/100 [04:00<00:02,  2.34s/it]PPO Steps: 100%|██████████| 100/100 [04:02<00:00,  2.37s/it]PPO Steps: 100%|██████████| 100/100 [04:02<00:00,  2.43s/it]
+
+Step 10: Avg Reward = -0.0978, Loss = 1.0344
+
+Step 20: Avg Reward = -0.1025, Loss = 1.0395
+
+Step 30: Avg Reward = -0.0905, Loss = 0.5592
+
+Step 40: Avg Reward = -0.0999, Loss = 0.3358
+
+Step 50: Avg Reward = -0.1045, Loss = 1.2080
+
+Step 60: Avg Reward = -0.1109, Loss = 0.4107
+
+Step 70: Avg Reward = -0.1099, Loss = 0.3481
+
+Step 80: Avg Reward = -0.1125, Loss = 0.8986
+
+Step 90: Avg Reward = -0.0993, Loss = 0.3699
+
+Step 100: Avg Reward = -0.0892, Loss = 0.8106
+
+======================================================================
+POST-TRAINING EVALUATION
+======================================================================
+Final eval:   0%|          | 0/20 [00:00<?, ?it/s]Final eval:   5%|▌         | 1/20 [00:02<00:43,  2.28s/it]Final eval:  10%|█         | 2/20 [00:04<00:41,  2.28s/it]Final eval:  15%|█▌        | 3/20 [00:06<00:38,  2.29s/it]Final eval:  20%|██        | 4/20 [00:09<00:36,  2.29s/it]Final eval:  25%|██▌       | 5/20 [00:11<00:34,  2.29s/it]Final eval:  30%|███       | 6/20 [00:13<00:32,  2.29s/it]Final eval:  35%|███▌      | 7/20 [00:16<00:29,  2.29s/it]Final eval:  40%|████      | 8/20 [00:18<00:27,  2.28s/it]Final eval:  45%|████▌     | 9/20 [00:20<00:25,  2.28s/it]Final eval:  50%|█████     | 10/20 [00:22<00:22,  2.28s/it]Final eval:  55%|█████▌    | 11/20 [00:25<00:20,  2.28s/it]Final eval:  60%|██████    | 12/20 [00:27<00:18,  2.28s/it]Final eval:  65%|██████▌   | 13/20 [00:29<00:16,  2.29s/it]Final eval:  70%|███████   | 14/20 [00:32<00:13,  2.29s/it]Final eval:  75%|███████▌  | 15/20 [00:34<00:11,  2.30s/it]Final eval:  80%|████████  | 16/20 [00:36<00:09,  2.30s/it]Final eval:  85%|████████▌ | 17/20 [00:38<00:06,  2.29s/it]Final eval:  90%|█████████ | 18/20 [00:41<00:04,  2.29s/it]Final eval:  95%|█████████▌| 19/20 [00:43<00:02,  2.29s/it]Final eval: 100%|██████████| 20/20 [00:45<00:00,  2.29s/it]Final eval: 100%|██████████| 20/20 [00:45<00:00,  2.29s/it]
+
+Final SARM Score: -0.1112
+
+Sample responses:
+  Q: Which of the following is a probability density function?
+Se...
+  A: To determine which of these options represents a probability density function (PDF), we need to chec...
+  Score: -0.0801
+
+  Q: For f’(x) = \frac{-3x^2 + 2x - 11}{(x^2 - 2x - 3)^2}, find x...
+  A: To solve for \( x \) when \( f'(x) = 0 \), we need to set the derivative equal to zero and solve for...
+  Score: -0.1108
+
+  Q: The diagram shows isosceles trapezoid LMNP. It also shows ho...
+  A: To solve this problem, we need to understand the properties of an isosceles trapezoid and how drawin...
+  Score: -0.1523
+
+
+======================================================================
+RESULTS SUMMARY
+======================================================================
+Model: Qwen/Qwen2.5-1.5B-Instruct
+Training: FULL FINE-TUNING (1,543,714,304 params)
+Dataset: RewardBench-2 Math (183 problems)
+Steps: 100
+
+Baseline SARM Score: -0.1003
+Final SARM Score:    -0.1112
+Improvement:         -0.0109 (-10.9%)
+
+Saving model to outputs/experiments/qwen_1.5b_full_ft/checkpoint...
+
+Results saved to outputs/experiments/qwen_1.5b_full_ft/results.json
+
+DONE!
+[W1213 03:10:52.376570527 AllocatorConfig.cpp:28] Warning: PYTORCH_CUDA_ALLOC_CONF is deprecated, use PYTORCH_ALLOC_CONF instead (function operator())

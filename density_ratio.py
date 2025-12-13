@@ -83,8 +83,9 @@ class DensityRatioTrainer:
         """
         self.model.train()
 
-        z_human = z_human.to(self.device)
-        z_policy = z_policy.to(self.device)
+        # Detach inputs and convert to float32 for discriminator
+        z_human = z_human.detach().float().to(self.device)
+        z_policy = z_policy.detach().float().to(self.device)
 
         x = torch.cat([z_human, z_policy], dim=0)
         y = torch.cat(
@@ -92,12 +93,13 @@ class DensityRatioTrainer:
             dim=0,
         )
 
-        logits = self.model(x)
-        loss = F.binary_cross_entropy_with_logits(logits, y)
-
-        self.opt.zero_grad(set_to_none=True)
-        loss.backward()
-        self.opt.step()
+        # Run discriminator update outside autocast/deepspeed context
+        with torch.enable_grad():
+            self.opt.zero_grad(set_to_none=True)
+            logits = self.model(x)
+            loss = F.binary_cross_entropy_with_logits(logits, y)
+            loss.backward()
+            self.opt.step()
 
         with torch.no_grad():
             preds = (logits > 0).float()
